@@ -32,4 +32,4 @@ jobs:
 
       - name: Tag and push Docker image
         run:
-          docker tag ap-yaml-checker ghcr.io/eijebong/archipelago-yaml-checker:main && docker push ghcr.io/archipelago-yaml-checker:main
+          docker tag ap-yaml-checker ghcr.io/eijebong/archipelago-yaml-checker:main && docker push ghcr.io/eijebong/archipelago-yaml-checker:main
