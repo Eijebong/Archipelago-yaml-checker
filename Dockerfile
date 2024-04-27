@@ -15,12 +15,21 @@ RUN mkdir archipelago && \
     git reset --hard ${BASE_COMMIT} && \
     python3 -m venv .venv && \
     . .venv/bin/activate && \
-    rm -Rf worlds/* && \
-    git checkout worlds/*.py && \
-    rm -Rf .git && \
     pip install -r requirements.txt && \
     pip install -r WebHostLib/requirements.txt && \
-    pip install maseya-z3pr>=1.0.0rc1 xxtea>=3.0.0
+    pip install -r worlds/_sc2common/requirements.txt && \
+    pip install -r worlds/alttp/requirements.txt && \
+    pip install -r worlds/factorio/requirements.txt && \
+    pip install -r worlds/hk/requirements.txt && \
+    pip install -r worlds/kh2/requirements.txt && \
+    pip install -r worlds/minecraft/requirements.txt && \
+    pip install -r worlds/sc2/requirements.txt && \
+    pip install -r worlds/soe/requirements.txt && \
+    pip install -r worlds/tloz/requirements.txt && \
+    pip install -r worlds/zillion/requirements.txt && \
+    rm -Rf worlds/* && \
+    git checkout worlds/*.py && \
+    rm -Rf .git
 
 COPY check.py /ap/archipelago/
 COPY run.sh /ap/archipelago/
