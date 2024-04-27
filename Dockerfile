@@ -2,7 +2,7 @@ FROM debian:12-slim
 
 ARG BASE_COMMIT
 
-RUN apt update && apt -y install python3 git python3-venv && apt clean
+RUN apt update && apt -y install python3 git python3-venv python3-tk && apt clean
 
 USER nobody
 WORKDIR /ap
