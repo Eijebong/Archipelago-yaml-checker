@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/check_yaml", methods=["POST"])
 def hello_world():
-    yaml_content = request.files["data"]
+    yaml_content = request.form["data"]
     results, _ = roll_options({"file.yaml": yaml_content})
 
     file_result = results["file.yaml"]
