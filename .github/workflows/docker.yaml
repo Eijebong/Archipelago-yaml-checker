@@ -51,4 +51,4 @@ jobs:
           sha1sum .ssh/id_ed25519
           chmod 600 .ssh/id_ed25519
       - name: Trigger deployment
-        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOSTNAME }} touch .deploy-yaml-checker
+        run: ssh -o StrictHostKeyChecking=no -i .ssh/id_ed25519 ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOSTNAME }} touch .deploy-yaml-checker
