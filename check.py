@@ -53,7 +53,7 @@ def check_yaml():
 def check_yaml(yaml):
     plando_options = frozenset({"bosses", "items", "connections", "texts"})
     try:
-        roll_settings(yaml)
+        roll_settings(yaml, plando_options)
     except Exception as e:
         if e.__cause__:
             return False, f"Validation error: {e} - {e.__cause__}"
