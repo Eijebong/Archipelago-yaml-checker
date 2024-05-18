@@ -1,4 +1,4 @@
-from Generate import roll_settings
+from Generate import roll_settings, PlandoOptions
 from Utils import parse_yamls
 from worlds.AutoWorld import AutoWorldRegister
 from flask import Flask, request
@@ -51,7 +51,7 @@ def check_yaml():
 
 
 def check_yaml(yaml):
-    plando_options = frozenset({"bosses", "items", "connections", "texts"})
+    plando_options = PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"}))
     try:
         roll_settings(yaml, plando_options)
     except Exception as e:
