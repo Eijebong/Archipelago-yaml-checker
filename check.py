@@ -24,7 +24,7 @@ def check_yaml():
             else:
                 result = True
                 err = "Unsupported"
-                unsupported = game
+                unsupported = [game,]
         else:
             for game, weight in game.items():
                 if weight == 0:
