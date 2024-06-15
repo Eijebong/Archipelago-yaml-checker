@@ -1,6 +1,9 @@
 from Generate import roll_settings, PlandoOptions
 from Utils import parse_yamls
-from worlds.AutoWorld import AutoWorldRegister
+from worlds.AutoWorld import AutoWorldRegister, call_all
+from argparse import Namespace
+from Options import VerifyKeys
+from BaseClasses import CollectionState, MultiWorld
 from flask import Flask, request
 
 import copy
@@ -20,7 +23,7 @@ def check_yaml():
         game = yaml['game']
         if isinstance(game, str):
             if is_supported(game):
-                result, err = check_yaml(yaml)
+                result, err = check_yaml(game, yaml)
             else:
                 result = True
                 err = "Unsupported"
@@ -50,10 +53,28 @@ def check_yaml():
     return {"error": err, "unsupported": unsupported}
 
 
-def check_yaml(yaml):
+def check_yaml(game, yaml):
     plando_options = PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"}))
     try:
-        roll_settings(yaml, plando_options)
+        world_type = AutoWorldRegister.world_types[game]
+        multiworld = MultiWorld(1)
+        multiworld.game = {1: world_type.game}
+        multiworld.player_name = {1: f"YAMLChecker"}
+        multiworld.set_seed(0)
+        multiworld.state = CollectionState(multiworld)
+
+        yaml_args = vars(roll_settings(yaml, plando_options))
+        args = Namespace()
+        for name, option in world_type.options_dataclass.type_hints.items():
+            value = yaml_args.get(name, option.default)
+
+            if issubclass(option, VerifyKeys):
+                option.verify_keys(value.value)
+
+            setattr(args, name, {1: value})
+
+        multiworld.set_options(args)
+        call_all(multiworld, "generate_early")
     except Exception as e:
         if e.__cause__:
             return False, f"Validation error: {e} - {e.__cause__}"
