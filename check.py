@@ -64,6 +64,11 @@ def check_yaml(game, yaml):
         multiworld.state = CollectionState(multiworld)
 
         yaml_args = vars(roll_settings(yaml, plando_options))
+
+        # Skip generate_early for Zillion as it generates the level layout which is way too slow
+        if game in ["Zillion"]:
+            return True, "OK"
+
         args = Namespace()
         for name, option in world_type.options_dataclass.type_hints.items():
             value = yaml_args.get(name, option.default)
