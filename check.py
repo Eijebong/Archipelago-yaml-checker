@@ -43,7 +43,7 @@ def check_yaml():
                 for yaml_game in yaml_for_game['game']:
                     yaml_for_game['game'][yaml_game] = 1 if yaml_game == game else 0
 
-                result, err = check_yaml(yaml_for_game)
+                result, err = check_yaml(game, yaml_for_game)
                 if not result:
                     break
 
