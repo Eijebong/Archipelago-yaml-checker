@@ -4,6 +4,9 @@ ARG BASE_COMMIT
 
 RUN apt update && apt -y install python3 git python3-venv python3-tk && apt clean
 
+# %include check.py
+# %include run.sh
+
 USER nobody
 WORKDIR /ap
 
@@ -31,7 +34,7 @@ RUN mkdir archipelago && \
     git checkout worlds/*.py && \
     rm -Rf .git
 
-COPY check.py /ap/archipelago/
-COPY run.sh /ap/archipelago/
+COPY /topsrcdir/check.py /ap/archipelago/
+COPY /topsrcdir/run.sh /ap/archipelago/
 
 ENTRYPOINT /ap/archipelago/run.sh

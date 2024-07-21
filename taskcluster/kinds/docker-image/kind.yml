@@ -1,0 +1,13 @@
+---
+loader: taskgraph.loader.transform:loader
+
+transforms:
+    - taskgraph.transforms.docker_image:transforms
+    - taskgraph.transforms.cached_tasks:transforms
+    - taskgraph.transforms.task:transforms
+    - eije_taskgraph.transforms.podman:transforms
+
+tasks:
+    ap-yaml-checker:
+      args:
+        BASE_COMMIT: daccb30e3d08a39729403e3b4f2da26a638b481a
