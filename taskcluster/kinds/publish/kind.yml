@@ -6,7 +6,7 @@ transforms:
   - taskgraph.transforms.task
 
 kind-dependencies:
-  - build
+  - docker-image
 
 task-defaults:
   worker-type: "linux-small"
@@ -14,6 +14,6 @@ task-defaults:
   run-on-git-branches: ["main"]
 
 tasks:
-  ap-lobby:
-    repo: ghcr.io/eijebong/ap-yaml-checker
+  ap-yaml-checker:
+    repo: ghcr.io/eijebong/archipelago-yaml-checker
     secret: github_deploy
