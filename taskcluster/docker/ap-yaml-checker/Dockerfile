@@ -7,7 +7,6 @@ RUN apt update && apt -y install python3 git python3-venv python3-tk && apt clea
 # %include check.py
 # %include run.sh
 
-USER nobody
 WORKDIR /ap
 
 RUN mkdir archipelago && \
@@ -36,5 +35,7 @@ RUN mkdir archipelago && \
 
 COPY /topsrcdir/check.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
+
+USER nobody
 
 ENTRYPOINT /ap/archipelago/run.sh
