@@ -5,7 +5,7 @@ from argparse import Namespace
 from Options import VerifyKeys
 from BaseClasses import CollectionState, MultiWorld
 from flask import Flask, request
-import sys
+import os
 
 import copy
 
@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 @app.route("/restart", methods=["GET"])
 def restart():
-    sys.exit(0)
+    os._exit(0)
 
 @app.route("/check_yaml", methods=["POST"])
 def check_yaml():
