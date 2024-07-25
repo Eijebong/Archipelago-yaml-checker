@@ -2,4 +2,8 @@
 
 cd /ap/archipelago
 . .venv/bin/activate
-python3 check.py
+
+while true; do
+    apwm install -i /index -a /apworlds -d /ap/archipelago/custom_worlds
+    python3 check.py
+done

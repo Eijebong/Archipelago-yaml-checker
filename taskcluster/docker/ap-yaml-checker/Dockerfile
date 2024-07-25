@@ -1,4 +1,4 @@
-FROM debian:12-slim
+FROM ghcr.io/eijebong/apwm:main-23
 
 ARG BASE_COMMIT
 
