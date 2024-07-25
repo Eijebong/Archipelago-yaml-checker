@@ -4,6 +4,7 @@ cd /ap/archipelago
 . .venv/bin/activate
 
 while true; do
-    apwm install -i /index -a /apworlds -d /ap/archipelago/worlds
+    rm -Rf /ap/archipelago/custom_worlds/*
+    apwm install -i /index -a /apworlds -d /ap/archipelago/custom_worlds
     python3 check.py
 done
