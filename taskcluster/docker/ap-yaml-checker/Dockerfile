@@ -1,4 +1,4 @@
-FROM ghcr.io/eijebong/apwm:main-23
+FROM ghcr.io/eijebong/apwm:main-24
 
 ARG BASE_COMMIT
 
@@ -29,8 +29,7 @@ RUN mkdir archipelago && \
     pip install -r worlds/soe/requirements.txt && \
     pip install -r worlds/tloz/requirements.txt && \
     pip install -r worlds/zillion/requirements.txt && \
-    rm -Rf worlds/* && \
-    git checkout worlds/*.py && \
+    mkdir custom_worlds && \
     rm -Rf .git
 
 COPY /topsrcdir/check.py /ap/archipelago/
