@@ -35,6 +35,4 @@ RUN mkdir archipelago && \
 COPY /topsrcdir/check.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
 
-USER nobody
-
 ENTRYPOINT /ap/archipelago/run.sh
