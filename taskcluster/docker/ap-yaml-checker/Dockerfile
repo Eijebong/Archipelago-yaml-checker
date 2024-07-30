@@ -29,6 +29,7 @@ RUN mkdir archipelago && \
     pip install -r worlds/soe/requirements.txt && \
     pip install -r worlds/tloz/requirements.txt && \
     pip install -r worlds/zillion/requirements.txt && \
+    pip install python-sat && \
     mkdir custom_worlds && \
     rm -Rf .git
 
