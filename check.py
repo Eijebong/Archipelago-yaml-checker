@@ -33,10 +33,6 @@ else:
 
 app = Flask(__name__)
 
-@app.route("/restart", methods=["GET"])
-def restart():
-    os._exit(0)
-
 @app.route("/check_yaml", methods=["POST"])
 def check_yaml():
     ctx = TraceContextTextMapPropagator().extract(carrier=request.headers)
