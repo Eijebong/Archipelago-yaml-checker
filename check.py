@@ -31,6 +31,7 @@ if otlp_endpoint:
 else:
     print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
 
+
 app = Flask(__name__)
 
 @app.route("/healthz", methods=["GET"])
