@@ -1,4 +1,4 @@
-FROM ghcr.io/eijebong/apwm:main-37
+FROM ghcr.io/eijebong/apwm:main-43
 
 ARG BASE_COMMIT
 
