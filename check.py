@@ -7,7 +7,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 from Generate import roll_settings, PlandoOptions
 from Utils import parse_yamls
-from worlds.AutoWorld import AutoWorldRegister, call_all
+from worlds.AutoWorld import AutoWorldRegister, call_all, World
 from argparse import Namespace
 from Options import VerifyKeys
 from BaseClasses import CollectionState, MultiWorld
@@ -83,6 +83,11 @@ def check_yaml():
         return {"error": err, "unsupported": unsupported}
 
 
+class DummyWorld(World):
+    game = "Dummy World"
+    item_name_to_id = {}
+    location_name_to_id = {}
+
 @tracer.start_as_current_span("check_yaml")
 def check_yaml(game, yaml):
     span = trace.get_current_span()
@@ -90,9 +95,9 @@ def check_yaml(game, yaml):
     plando_options = PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"}))
     try:
         world_type = AutoWorldRegister.world_types[game]
-        multiworld = MultiWorld(1)
-        multiworld.game = {1: world_type.game}
-        multiworld.player_name = {1: f"YAMLChecker"}
+        multiworld = MultiWorld(2)
+        multiworld.game = {1: world_type.game, 2: "Dummy World"}
+        multiworld.player_name = {1: f"YAMLChecker", 2: f"YAMLChecker2"}
         multiworld.set_seed(0)
         multiworld.state = CollectionState(multiworld)
 
@@ -108,7 +113,7 @@ def check_yaml(game, yaml):
             if issubclass(option, VerifyKeys):
                 option.verify_keys(value.value)
 
-            setattr(args, name, {1: value})
+            setattr(args, name, {1: value, 2: {}})
         span.add_event("Keys verified")
 
         # Skip generate_early for Zillion as it generates the level layout which is way too slow
