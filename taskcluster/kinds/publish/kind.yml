@@ -11,7 +11,7 @@ kind-dependencies:
 task-defaults:
   worker-type: "linux-small"
   run-on-tasks-for: ["github-push"]
-  run-on-git-branches: ["main"]
+  run-on-git-branches: ["main", "prod"]
 
 tasks:
   ap-yaml-checker:
