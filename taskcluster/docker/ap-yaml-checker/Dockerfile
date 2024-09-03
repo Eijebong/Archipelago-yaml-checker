@@ -2,7 +2,7 @@ FROM ghcr.io/eijebong/apwm:main-43
 
 ARG BASE_COMMIT
 
-RUN apt update && apt -y install python3 git python3-venv python3-tk && apt clean
+RUN apt update && apt -y install python3 git python3-venv python3-tk zip && apt clean
 
 # %include check.py
 # %include run.sh
@@ -30,8 +30,12 @@ RUN mkdir archipelago && \
     pip install -r worlds/tloz/requirements.txt && \
     pip install -r worlds/zillion/requirements.txt && \
     pip install python-sat opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc && \
-    mkdir custom_worlds && \
+    mkdir -p /ap/supported_worlds && \
     rm -Rf .git
+
+# %include prepare_worlds.sh
+COPY /topsrcdir/prepare_worlds.sh /ap/archipelago/
+RUN bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 
 COPY /topsrcdir/check.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
