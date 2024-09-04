@@ -12,7 +12,6 @@ from argparse import Namespace
 from Options import VerifyKeys
 from BaseClasses import CollectionState, MultiWorld
 from worlds import WorldSource
-from flask import Flask, request
 
 import copy
 import json
@@ -20,6 +19,9 @@ import os
 import tempfile
 import shutil
 import sys
+import multiprocessing
+from multiprocessing import Process, Pipe
+from aiohttp import web
 
 
 try:
@@ -35,20 +37,25 @@ resource = Resource(attributes={
 })
 
 otlp_endpoint = os.environ.get("OTLP_ENDPOINT")
-if otlp_endpoint:
-    traceProvider = TracerProvider(resource=resource)
-    processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
-    traceProvider.add_span_processor(processor)
-    trace.set_tracer_provider(traceProvider)
-else:
-    print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
 
 
-app = Flask(__name__)
+async def healthz(_request):
+    return web.Response(text="OK")
 
-@app.route("/healthz", methods=["GET"])
-def healthz():
-    return "OK"
+async def check_yaml_route(request):
+    form = await request.post()
+    ctx = TraceContextTextMapPropagator().extract(carrier=request.headers)
+    data = form["data"]
+    apworlds = form["apworlds"]
+
+    rpipe, wpipe = Pipe()
+    p = Process(target=check_request, args=(ctx, apworlds, data, wpipe))
+    p.start()
+    p.join()
+
+    response = rpipe.recv()
+
+    return web.json_response(response)
 
 @tracer.start_as_current_span("load_apworld")
 def load_apworld(apworld_name, apworld_version):
@@ -78,52 +85,29 @@ def load_apworld(apworld_name, apworld_version):
 
     WorldSource(dest_path, is_zip=True, relative=False).load()
 
-@app.route("/check_yaml", methods=["POST"])
-def check_yaml_route():
-    ctx = TraceContextTextMapPropagator().extract(carrier=request.headers)
-    data = request.form["data"]
-    apworlds = request.form["apworlds"]
-
-    rpipe, wpipe = os.pipe()
-    pid = os.fork()
-    if pid == 0:
-        with tracer.start_as_current_span("check_yamls", context=ctx) as span:
-            try:
-                for (apworld, version) in json.loads(apworlds):
-                    load_apworld(apworld, version)
-            except Exception as e:
-                os.write(wpipe, json.dumps({"error": f"Failed to load apworld: {e}"}).encode())
-                os.close(wpipe)
-                span.__exit__(None, None, None)
-                processor.force_flush()
-                os._exit(0)
-
-            try:
-                value = check_request(ctx, data)
-                os.write(wpipe, json.dumps(value).encode())
-            except Exception as e:
-                if e.__cause__:
-                    os.write(wpipe, json.dumps({"error": f"{e} - {e.__cause__}"}).encode())
-                else:
-                    os.write(wpipe, json.dumps({"error": f"{e}"}).encode())
-            finally:
-                os.close(wpipe)
-                span.__exit__(None, None, None)
-                processor.force_flush()
-                os._exit(0)
+def check_request(ctx, apworlds, data, wpipe):
+    if otlp_endpoint:
+        traceProvider = TracerProvider(resource=resource)
+        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
+        traceProvider.add_span_processor(processor)
+        trace.set_tracer_provider(traceProvider)
     else:
-        os.close(wpipe)
-        response = b""
-        while True:
-            partial = os.read(rpipe, 1024)
-            if not partial:
-                break
-            response += partial
+        print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
 
-        return response.decode()
+    with tracer.start_as_current_span("check_yamls", context=ctx) as span:
+        try:
+            result = load_apworlds_and_check(ctx, apworlds, data)
+            wpipe.send(result)
+        except Exception as e:
+            wpipe.send({"error": f"{e}"})
 
+    if otlp_endpoint:
+        processor.force_flush()
 
-def check_request(ctx, data):
+def load_apworlds_and_check(ctx, apworlds, data):
+    for (apworld, version) in json.loads(apworlds):
+        load_apworld(apworld, version)
+
     yaml_content = data
     parsed_yamls = parse_yamls(yaml_content)
     unsupported = []
@@ -215,4 +199,9 @@ def check_yaml(game, name, yaml):
 def is_supported(game):
     return game in AutoWorldRegister.world_types
 
-app.run(host="0.0.0.0")
+if __name__ == "__main__":
+    multiprocessing.set_start_method('fork')
+
+    app = web.Application()
+    app.add_routes([web.get('/healthz', healthz), web.post('/check_yaml', check_yaml_route)])
+    web.run_app(app, host="0.0.0.0", port=5000)

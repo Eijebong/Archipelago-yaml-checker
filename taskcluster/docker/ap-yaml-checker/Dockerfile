@@ -29,7 +29,7 @@ RUN mkdir archipelago && \
     pip install -r worlds/soe/requirements.txt && \
     pip install -r worlds/tloz/requirements.txt && \
     pip install -r worlds/zillion/requirements.txt && \
-    pip install python-sat opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc && \
+    pip install python-sat opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc aiohttp && \
     mkdir -p /ap/supported_worlds && \
     rm -Rf .git
 
