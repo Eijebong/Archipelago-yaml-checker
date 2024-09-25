@@ -4,6 +4,7 @@ transforms:
   - eije_taskgraph.transforms.push_image
   - taskgraph.transforms.run
   - taskgraph.transforms.task
+  - eije_taskgraph.transforms.common:transforms
 
 kind-dependencies:
   - docker-image

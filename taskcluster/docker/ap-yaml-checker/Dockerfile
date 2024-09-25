@@ -34,6 +34,7 @@ RUN mkdir archipelago && \
     rm -Rf .git
 
 # %include prepare_worlds.sh
+
 COPY /topsrcdir/prepare_worlds.sh /ap/archipelago/
 RUN bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 
