@@ -32,6 +32,7 @@ RUN mkdir archipelago && \
     pip install -r worlds/zillion/requirements.txt && \
     pip install python-sat opentelemetry-api opentelemetry-sdk opentelemetry-exporter-otlp-proto-grpc aiohttp && \
     mkdir -p /ap/supported_worlds && \
+    chown -R worker:worker /ap/archipelago && \
     rm -Rf .git
 
 # %include prepare_worlds.sh
