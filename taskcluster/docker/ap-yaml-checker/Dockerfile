@@ -43,4 +43,4 @@ COPY /topsrcdir/check.py /ap/archipelago/
 COPY /topsrcdir/self_check.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
 
-ENTRYPOINT /ap/archipelago/run.sh
+CMD /ap/archipelago/run.sh
