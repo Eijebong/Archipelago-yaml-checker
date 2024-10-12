@@ -1,10 +1,11 @@
-FROM ghcr.io/eijebong/apwm:main-50
+FROM ghcr.io/eijebong/apwm:latest
 
 ARG BASE_COMMIT
 
 RUN apt update && apt -y install python3 git python3-venv python3-tk zip && apt clean
 
 # %include check.py
+# %include self_check.py
 # %include run.sh
 
 WORKDIR /ap
@@ -39,6 +40,7 @@ COPY /topsrcdir/prepare_worlds.sh /ap/archipelago/
 RUN bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 
 COPY /topsrcdir/check.py /ap/archipelago/
+COPY /topsrcdir/self_check.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
 
 ENTRYPOINT /ap/archipelago/run.sh

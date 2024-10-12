@@ -25,19 +25,19 @@ from multiprocessing import Process, Pipe
 from aiohttp import web
 
 
-try:
-    APWORLDS_DIR = sys.argv[1]
-    CUSTOM_APWORLDS_DIR = sys.argv[2]
-except:
-    print("Usage check.py worlds_dir custom_worlds_dir")
-    sys.exit(1)
-
 tracer = trace.get_tracer("yaml-validator")
 resource = Resource(attributes={
     SERVICE_NAME: "yaml-checker"
 })
 
 otlp_endpoint = os.environ.get("OTLP_ENDPOINT")
+
+try:
+    APWORLDS_DIR = sys.argv[1]
+    CUSTOM_APWORLDS_DIR = sys.argv[2]
+except:
+    print("Usage check.py worlds_dir custom_worlds_dir")
+    sys.exit(1)
 
 
 async def healthz(_request):
@@ -97,7 +97,7 @@ def check_request(ctx, apworlds, data, wpipe):
 
     with tracer.start_as_current_span("check_yamls", context=ctx) as span:
         try:
-            result = load_apworlds_and_check(ctx, apworlds, data)
+            result = load_apworlds_and_check(apworlds, data)
             wpipe.send(result)
         except Exception as e:
             span.record_exception(e)
@@ -106,13 +106,17 @@ def check_request(ctx, apworlds, data, wpipe):
     if otlp_endpoint:
         processor.force_flush()
 
-def load_apworlds_and_check(ctx, apworlds, data):
+def load_apworlds_and_check(apworlds, data):
     for (apworld, version) in json.loads(apworlds):
         load_apworld(apworld, version)
 
-    yaml_content = data
+    return check(data)
+
+def check(yaml_content):
     parsed_yamls = parse_yamls(yaml_content)
     unsupported = []
+    result = False
+    err = "No game verified, check your yaml"
 
     for yaml in parsed_yamls:
         if 'game' not in yaml:
