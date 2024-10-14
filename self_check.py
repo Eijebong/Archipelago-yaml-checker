@@ -17,9 +17,10 @@ import yaml
 
 def world_from_apworld_name(apworld_name):
     for name, world in AutoWorldRegister.world_types.items():
-        if world.__module__ == f"worlds.{apworld_name}":
+        if world.__module__.startswith(f"worlds.{apworld_name}"):
             return name, world
-    return None
+
+    raise Exception(f"Couldn't find loaded workd with world: {apworld_name}")
 
 # In Options.py
 def generate_template(world_name):
