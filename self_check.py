@@ -1,8 +1,8 @@
 import sys
 sys.path.append("/home/eijebong/code/archipelago")
 
-if len(sys.argv) != 6:
-    print("Usage: self_check.py worlds_dir custom_worlds_dir world_name world_version output_folder")
+if len(sys.argv) != 7:
+    print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
     sys.exit(1)
 
 import check
@@ -23,7 +23,7 @@ def world_from_apworld_name(apworld_name):
     raise Exception(f"Couldn't find loaded workd with world: {apworld_name}")
 
 # In Options.py
-def generate_template(world_name):
+def generate_template(world_name, expected_world_name):
     def dictify_range(option):
         data = {option.default: 50}
         for sub_option in ["random", "random-low", "random-high"]:
@@ -49,6 +49,9 @@ def generate_template(world_name):
     if world is None:
         raise Exception(f"Failed to resolve apworld from apworld name: {apworld_name}")
 
+    if expected_world_name != game_name:
+        raise Exception(f"The given apworld doesn't match the game named passed in. Expected {game_name}, got {expected_world_name}")
+
     option_groups = get_option_groups(world)
     with open(local_path("data", "options.yaml")) as f:
         file_data = f.read()
@@ -62,12 +65,13 @@ def generate_template(world_name):
     return res
 
 if __name__ == "__main__":
-    yaml_content = ""
     apworld = sys.argv[3]
     version = sys.argv[4]
-    output_folder = sys.argv[5]
+    world_name = sys.argv[5]
+    output_folder = sys.argv[6]
     check.load_apworld(apworld, version)
-    yaml_content = generate_template(apworld)
+
+    yaml_content = generate_template(apworld, world_name)
 
     with open(os.path.join(output_folder, "template.yaml"), "w") as fd:
         fd.write(yaml_content)
