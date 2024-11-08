@@ -17,13 +17,26 @@ from worlds import WorldSource
 import copy
 import json
 import os
-import tempfile
+import requests
 import shutil
 import sys
+import tempfile
 import multiprocessing
 from multiprocessing import Process, Pipe
 from aiohttp import web
 
+
+# Some **supported** apworlds try to get stuff from external APIs. We do not want that as it currently times out in prod
+# Until I have a better solution, just return an error immediately when someone tries to use requests
+def no_internet(*args, **kwargs):
+    raise RuntimeError("The apworld tried to contact the internet which isn't supported with YAML validation.")
+
+requests.get = no_internet
+requests.post = no_internet
+requests.put = no_internet
+requests.head = no_internet
+requests.options = no_internet
+requests.delete = no_internet
 
 tracer = trace.get_tracer("yaml-validator")
 resource = Resource(attributes={
