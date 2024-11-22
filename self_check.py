@@ -69,14 +69,15 @@ if __name__ == "__main__":
     version = sys.argv[4]
     world_name = sys.argv[5]
     output_folder = sys.argv[6]
+    sys.argv.append("--player_files_path")
+    sys.argv.append(output_folder)
+
     check.load_apworld(apworld, version)
 
     yaml_content = generate_template(apworld, world_name)
 
     with open(os.path.join(output_folder, "template.yaml"), "w") as fd:
         fd.write(yaml_content)
-    sys.argv.append("--player_files_path")
-    sys.argv.append(output_folder)
     result = check.check(yaml_content)
 
     if 'err' in result:
