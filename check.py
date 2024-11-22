@@ -120,6 +120,16 @@ def check_request(ctx, apworlds, data, wpipe):
         processor.force_flush()
 
 def load_apworlds_and_check(apworlds, data):
+    # Some apworlds (project diva for example) require read access to the player YAMLs at load time to create their world
+    # They do so in order to load custom DLC data because archipelago doesn't provide an API for dynamic worlds.
+    # To be able to use those apworlds, write the yaml in a tmpdir and then fake out the `--players_files_path` argument
+    yamldir = tempfile.mkdtemp()
+    with open(f"{yamldir}/Player.yaml", "w") as fd:
+        fd.write(data)
+
+    sys.argv.append("--player_files_path")
+    sys.argv.append(yamldir)
+
     for (apworld, version) in json.loads(apworlds):
         load_apworld(apworld, version)
 
