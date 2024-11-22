@@ -20,7 +20,7 @@ def world_from_apworld_name(apworld_name):
         if world.__module__.startswith(f"worlds.{apworld_name}"):
             return name, world
 
-    raise Exception(f"Couldn't find loaded workd with world: {apworld_name}")
+    raise Exception(f"Couldn't find loaded world with world: {apworld_name}")
 
 # In Options.py
 def generate_template(world_name, expected_world_name):
@@ -75,6 +75,8 @@ if __name__ == "__main__":
 
     with open(os.path.join(output_folder, "template.yaml"), "w") as fd:
         fd.write(yaml_content)
+    sys.argv.append("--player_files_path")
+    sys.argv.append(output_folder)
     result = check.check(yaml_content)
 
     if 'err' in result:
