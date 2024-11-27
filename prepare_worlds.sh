@@ -41,6 +41,6 @@ for f in $1/worlds/*; do
         continue
     fi
 
-    (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-0.5.0.apworld $(basename $f))
+    (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-0.5.1.apworld $(basename $f))
     rm -Rf "$f"
 done
