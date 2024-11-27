@@ -245,13 +245,13 @@ def check_yaml(game, name, yaml):
                     multiworld.early_items[player][item_name] = max(0, early-count)
                     remaining_count = count-early
                     if remaining_count > 0:
-                        local_early = multiworld.early_local_items[player].get(item_name, 0)
+                        local_early = multiworld.local_early_items[player].get(item_name, 0)
                         if local_early:
                             multiworld.early_items[player][item_name] = max(0, local_early - remaining_count)
                         del local_early
                 del early
 
-        with tracer.start_span("generate_regions"):
+        with tracer.start_span("create_regions"):
             call_all(multiworld, "create_regions")
 
         with tracer.start_span("create_items"):
@@ -268,14 +268,19 @@ def check_yaml(game, name, yaml):
         for player in multiworld.player_ids:
             exclusion_rules(multiworld, player, multiworld.worlds[player].options.exclude_locations.value)
             multiworld.worlds[player].options.priority_locations.value -= multiworld.worlds[player].options.exclude_locations.value
+            world_excluded_locations = set()
             for location_name in multiworld.worlds[player].options.priority_locations.value:
                 try:
                     location = multiworld.get_location(location_name, player)
-                except KeyError as e:  # failed to find the given location. Check if it's a legitimate location
-                    if location_name not in multiworld.worlds[player].location_name_to_id:
-                        raise Exception(f"Unable to prioritize location {location_name} in player {player}'s world.") from e
-                else:
+                except KeyError:
+                    continue
+
+                if location.progress_type != LocationProgressType.EXCLUDED:
                     location.progress_type = LocationProgressType.PRIORITY
+                else:
+                    logger.warning(f"Unable to prioritize location \"{location_name}\" in player {player}'s world because the world excluded it.")
+                    world_excluded_locations.add(location_name)
+            multiworld.worlds[player].options.priority_locations.value -= world_excluded_locations
 
         locality_rules(multiworld)
 
@@ -286,6 +291,7 @@ def check_yaml(game, name, yaml):
         # Because some worlds don't actually create items during create_items this has to be as late as possible.
         if any(getattr(multiworld.worlds[player].options, "start_inventory_from_pool", None) for player in multiworld.player_ids):
             new_items: List[Item] = []
+            old_items: List[Item] = []
             depletion_pool: Dict[int, Dict[str, int]] = {
                 player: getattr(multiworld.worlds[player].options,
                                 "start_inventory_from_pool",
@@ -304,21 +310,26 @@ def check_yaml(game, name, yaml):
                     depletion_pool[item.player][item.name] -= 1
                     # quick abort if we have found all items
                     if not target:
-                        new_items.extend(multiworld.itempool[i+1:])
+                        old_items.extend(multiworld.itempool[i+1:])
                         break
                 else:
-                    new_items.append(item)
+                    old_items.append(item)
 
             # leftovers?
             if target:
                 for player, remaining_items in depletion_pool.items():
                     remaining_items = {name: count for name, count in remaining_items.items() if count}
                     if remaining_items:
-                        raise Exception(f"{multiworld.get_player_name(player)}"
+                        logger.warning(f"{multiworld.get_player_name(player)}"
                                         f" is trying to remove items from their pool that don't exist: {remaining_items}")
-            assert len(multiworld.itempool) == len(new_items), "Item Pool amounts should not change."
-            multiworld.itempool[:] = new_items
+                        # find all filler we generated for the current player and remove until it matches 
+                        removables = [item for item in new_items if item.player == player]
+                        for _ in range(sum(remaining_items.values())):
+                            new_items.remove(removables.pop())
+            assert len(multiworld.itempool) == len(new_items + old_items), "Item Pool amounts should not change."
+            multiworld.itempool[:] = new_items + old_items
 
+        multiworld.link_items()
     except Exception as e:
         span = trace.get_current_span()
         span.record_exception(e)
