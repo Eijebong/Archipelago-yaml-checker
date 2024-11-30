@@ -278,7 +278,6 @@ def check_yaml(game, name, yaml):
                 if location.progress_type != LocationProgressType.EXCLUDED:
                     location.progress_type = LocationProgressType.PRIORITY
                 else:
-                    logger.warning(f"Unable to prioritize location \"{location_name}\" in player {player}'s world because the world excluded it.")
                     world_excluded_locations.add(location_name)
             multiworld.worlds[player].options.priority_locations.value -= world_excluded_locations
 
@@ -320,8 +319,6 @@ def check_yaml(game, name, yaml):
                 for player, remaining_items in depletion_pool.items():
                     remaining_items = {name: count for name, count in remaining_items.items() if count}
                     if remaining_items:
-                        logger.warning(f"{multiworld.get_player_name(player)}"
-                                        f" is trying to remove items from their pool that don't exist: {remaining_items}")
                         # find all filler we generated for the current player and remove until it matches 
                         removables = [item for item in new_items if item.player == player]
                         for _ in range(sum(remaining_items.values())):
