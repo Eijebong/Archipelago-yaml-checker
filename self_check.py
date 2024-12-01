@@ -80,9 +80,9 @@ if __name__ == "__main__":
         fd.write(yaml_content)
     result = check.check(yaml_content)
 
-    if 'err' in result:
+    if 'error' in result:
         print("Error while validating the apworld: {apworld} {version}")
-        print(result["err"])
+        print(result["error"])
         sys.exit(1)
 
     if result['unsupported']:
