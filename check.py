@@ -201,6 +201,8 @@ def check_yaml(game, name, yaml):
 
         span.add_event("Rolling settings")
         erargs = Namespace()
+        if yaml.get(name) is None:
+            raise Exception("Did you submit a game with no settings?")
         settings = roll_settings(yaml, plando_options)
         span.add_event("Settings rolled")
 
