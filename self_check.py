@@ -1,5 +1,4 @@
 import sys
-sys.path.append("/home/eijebong/code/archipelago")
 
 if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
@@ -65,6 +64,8 @@ def generate_template(world_name, expected_world_name):
     return res
 
 if __name__ == "__main__":
+    apworlds_dir = sys.argv[1]
+    custom_apworlds_dir = sys.argv[2]
     apworld = sys.argv[3]
     version = sys.argv[4]
     world_name = sys.argv[5]
@@ -72,21 +73,19 @@ if __name__ == "__main__":
     sys.argv.append("--player_files_path")
     sys.argv.append(output_folder)
 
-    check.load_apworld(apworld, version)
+    checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, None)
+
+    checker.load_apworld(apworld, version)
 
     yaml_content = generate_template(apworld, world_name)
 
     with open(os.path.join(output_folder, "template.yaml"), "w") as fd:
         fd.write(yaml_content)
-    result = check.check(yaml_content)
+    result = checker.check(yaml_content)
 
     if 'error' in result:
         print("Error while validating the apworld: {apworld} {version}")
         print(result["error"])
-        sys.exit(1)
-
-    if result['unsupported']:
-        print("Unexpected unsupported apworlds, this should not happen:", result["unsupported"])
         sys.exit(1)
 
     print(f"Successfully validated {apworld} {version}")

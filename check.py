@@ -1,5 +1,4 @@
 from opentelemetry import trace
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
@@ -15,15 +14,17 @@ from BaseClasses import CollectionState, MultiWorld, LocationProgressType
 from worlds import WorldSource
 
 import copy
-import json
 import os
 import requests
 import shutil
 import sys
 import tempfile
-import multiprocessing
 from multiprocessing import Process, Pipe
-from aiohttp import web
+
+
+resource = Resource(attributes={
+    SERVICE_NAME: "yaml-validation-worker"
+})
 
 
 # Some **supported** apworlds try to get stuff from external APIs. We do not want that as it currently times out in prod
@@ -38,147 +39,120 @@ requests.head = no_internet
 requests.options = no_internet
 requests.delete = no_internet
 
-tracer = trace.get_tracer("yaml-validator")
-resource = Resource(attributes={
-    SERVICE_NAME: "yaml-checker"
-})
+tracer = trace.get_tracer("yaml-validation-worker")
 
-otlp_endpoint = os.environ.get("OTLP_ENDPOINT")
+class YamlChecker:
+    def __init__(self, apworlds_dir, custom_apworlds_dir, otlp_endpoint):
+        self.apworlds_dir = apworlds_dir
+        self.custom_apworlds_dir = custom_apworlds_dir
+        self.otlp_endpoint = otlp_endpoint
 
-try:
-    APWORLDS_DIR = sys.argv[1]
-    CUSTOM_APWORLDS_DIR = sys.argv[2]
-except:
-    print("Usage check.py worlds_dir custom_worlds_dir")
-    sys.exit(1)
+    @tracer.start_as_current_span("load_apworld")
+    def load_apworld(self, apworld_name, apworld_version):
+        span = trace.get_current_span()
+        span.set_attribute("apworld_name", apworld_name)
+        span.set_attribute("apworld_version", apworld_version)
 
+        if '/' in apworld_name:
+            raise Exception("Invalid apworld name")
 
-async def healthz(_request):
-    return web.Response(text="OK")
+        if '/' in apworld_version:
+            raise Exception("Invalid apworld version")
 
-async def check_yaml_route(request):
-    form = await request.post()
-    ctx = TraceContextTextMapPropagator().extract(carrier=request.headers)
-    data = form["data"]
-    apworlds = form["apworlds"]
+        tempdir = tempfile.mkdtemp()
+        apworld_path = f"{self.custom_apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
+        supported_apworld_path = f"{self.apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
+        dest_path = f"{tempdir}/{apworld_name}.apworld"
 
-    rpipe, wpipe = Pipe()
-    p = Process(target=check_request, args=(ctx, apworlds, data, wpipe))
-    p.start()
-    p.join()
+        if os.path.isfile(apworld_path):
+            shutil.copy(apworld_path, dest_path)
+        elif os.path.isfile(supported_apworld_path):
+            shutil.copy(supported_apworld_path, dest_path)
+        else:
+            if "worlds." + apworld_name in sys.modules:
+                return
+            raise Exception("Invalid apworld: {}, version {}".format(apworld_name, apworld_version))
 
-    response = rpipe.recv()
+        WorldSource(dest_path, is_zip=True, relative=False).load()
 
-    return web.json_response(response)
+    def check(self, yaml_content):
+        parsed_yamls = parse_yamls(yaml_content)
+        result = False
+        err = "No game verified, check your yaml"
 
-@tracer.start_as_current_span("load_apworld")
-def load_apworld(apworld_name, apworld_version):
-    span = trace.get_current_span()
-    span.set_attribute("apworld_name", apworld_name)
-    span.set_attribute("apworld_version", apworld_version)
+        for yaml in parsed_yamls:
+            if 'game' not in yaml:
+                return {"error": "This doesn't look like an archipelago YAML? Missing game"}
+            if 'name' not in yaml:
+                return {"error": "This doesn't look like an archipelago YAML? Missing player"}
 
-    if '/' in apworld_name:
-        raise Exception("Invalid apworld name")
-
-    if '/' in apworld_version:
-        raise Exception("Invalid apworld version")
-
-    tempdir = tempfile.mkdtemp()
-    apworld_path = f"{CUSTOM_APWORLDS_DIR}/{apworld_name}-{apworld_version}.apworld"
-    supported_apworld_path = f"{APWORLDS_DIR}/{apworld_name}-{apworld_version}.apworld"
-    dest_path = f"{tempdir}/{apworld_name}.apworld"
-
-    if os.path.isfile(apworld_path):
-        shutil.copy(apworld_path, dest_path)
-    elif os.path.isfile(supported_apworld_path):
-        shutil.copy(supported_apworld_path, dest_path)
-    else:
-        if "worlds." + apworld_name in sys.modules:
-            return
-        raise Exception("Invalid apworld: {}, version {}".format(apworld_name, apworld_version))
-
-    WorldSource(dest_path, is_zip=True, relative=False).load()
-
-def check_request(ctx, apworlds, data, wpipe):
-    if otlp_endpoint:
-        traceProvider = TracerProvider(resource=resource)
-        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
-        traceProvider.add_span_processor(processor)
-        trace.set_tracer_provider(traceProvider)
-    else:
-        print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
-
-    with tracer.start_as_current_span("check_yamls", context=ctx) as span:
-        try:
-            result = load_apworlds_and_check(apworlds, data)
-            wpipe.send(result)
-        except Exception as e:
-            span.record_exception(e)
-            wpipe.send({"error": f"{e}"})
-
-    if otlp_endpoint:
-        processor.force_flush()
-
-def load_apworlds_and_check(apworlds, data):
-    # Some apworlds (project diva for example) require read access to the player YAMLs at load time to create their world
-    # They do so in order to load custom DLC data because archipelago doesn't provide an API for dynamic worlds.
-    # To be able to use those apworlds, write the yaml in a tmpdir and then fake out the `--players_files_path` argument
-    yamldir = tempfile.mkdtemp()
-    with open(f"{yamldir}/Player.yaml", "w") as fd:
-        fd.write(data)
-
-    sys.argv.append("--player_files_path")
-    sys.argv.append(yamldir)
-
-    for (apworld, version) in json.loads(apworlds):
-        load_apworld(apworld, version)
-
-    return check(data)
-
-def check(yaml_content):
-    parsed_yamls = parse_yamls(yaml_content)
-    unsupported = []
-    result = False
-    err = "No game verified, check your yaml"
-
-    for yaml in parsed_yamls:
-        if 'game' not in yaml:
-            return {"error": "This doesn't look like an archipelago YAML? Missing game"}
-        if 'name' not in yaml:
-            return {"error": "This doesn't look like an archipelago YAML? Missing player"}
-
-        game = yaml['game']
-        name = yaml['name']
-        if isinstance(game, str):
-            if is_supported(game):
+            game = yaml['game']
+            name = yaml['name']
+            if isinstance(game, str):
                 result, err = check_yaml(game, name, yaml)
             else:
-                result = True
-                err = "Unsupported"
-                unsupported = [game,]
+                for game, weight in game.items():
+                    if weight == 0:
+                        continue
+
+                    yaml_for_game = copy.deepcopy(yaml);
+                    for yaml_game in yaml_for_game['game']:
+                        yaml_for_game['game'][yaml_game] = 1 if yaml_game == game else 0
+
+                    result, err = check_yaml(game, name, yaml_for_game)
+                    if not result:
+                        break
+
+        if result:
+            return {}
+
+        return {"error": err}
+
+    def _load_apworlds_and_check(self, apworlds, data):
+        # Some apworlds (project diva for example) require read access to the player YAMLs at load time to create their world
+        # They do so in order to load custom DLC data because archipelago doesn't provide an API for dynamic worlds.
+        # To be able to use those apworlds, write the yaml in a tmpdir and then fake out the `--players_files_path` argument
+        yamldir = tempfile.mkdtemp()
+        with open(f"{yamldir}/Player.yaml", "w") as fd:
+            fd.write(data)
+
+        sys.argv.append("--player_files_path")
+        sys.argv.append(yamldir)
+
+        for (apworld, version) in apworlds:
+            self.load_apworld(apworld, version)
+
+
+        return self.check(data)
+
+    def _inner_run_check_for_job(self, params, ctx, wpipe):
+        if self.otlp_endpoint:
+            traceProvider = TracerProvider(resource=resource)
+            processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=self.otlp_endpoint))
+            traceProvider.add_span_processor(processor)
+            trace.set_tracer_provider(traceProvider)
         else:
-            for game, weight in game.items():
-                if weight == 0:
-                    continue
+            print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
 
-                if not is_supported(game):
-                    result = True
-                    err = "Unsupported"
-                    unsupported.append(game)
-                    continue
+        with tracer.start_as_current_span("check_yamls", context=ctx) as span:
+            try:
+                result = self._load_apworlds_and_check(params['apworlds'], params['yaml'])
+                wpipe.send(result)
+            except Exception as e:
+                span.record_exception(e)
+                wpipe.send({"error": f"{e}"})
 
-                yaml_for_game = copy.deepcopy(yaml);
-                for yaml_game in yaml_for_game['game']:
-                    yaml_for_game['game'][yaml_game] = 1 if yaml_game == game else 0
+        if self.otlp_endpoint is not None:
+            processor.force_flush()
 
-                result, err = check_yaml(game, name, yaml_for_game)
-                if not result:
-                    break
+    def run_check_for_job(self, job):
+        rpipe, wpipe = Pipe()
+        p = Process(target=self._inner_run_check_for_job, args=(job.params, job.ctx, wpipe))
+        p.start()
+        p.join()
 
-    if result:
-        return {"unsupported": unsupported}
+        return rpipe.recv()
 
-    return {"error": err, "unsupported": unsupported}
 
 class DummyWorld(World):
     game = "Dummy World"
@@ -338,12 +312,3 @@ def check_yaml(game, name, yaml):
 
     return True, "OK"
 
-def is_supported(game):
-    return game in AutoWorldRegister.world_types
-
-if __name__ == "__main__":
-    multiprocessing.set_start_method('fork')
-
-    app = web.Application()
-    app.add_routes([web.get('/healthz', healthz), web.post('/check_yaml', check_yaml_route)])
-    web.run_app(app, host="0.0.0.0", port=5000)
