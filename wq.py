@@ -95,16 +95,27 @@ async def main(loop):
     q = LobbyQueue(root_url, "yaml_validation", worker_name, token, loop)
 
     while True:
-        job = await q.claim_job()
+        try:
+            job = await q.claim_job()
+        except Exception as e:
+            print(f"Error while claiming job from lobby: {e}. Retrying in 1s...")
+            await asyncio.sleep(1)
+            continue
 
         try:
             if job is not None:
                 print(f"Claimed job: {job.job_id}")
                 await do_a_check(checker, job)
+            continue
         except Exception as e:
             print(e)
             # TODO: Light the beacon, gondor's calling for help
-            await job.resolve(JobStatus.InternalError, {"error": str(e)})
+            try:
+                await job.resolve(JobStatus.InternalError, {"error": str(e)})
+            except Exception as e:
+                # TODO: Another reason for red alertg
+                print(e)
+                continue
 
     await q.close()
 
