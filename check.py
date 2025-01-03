@@ -141,15 +141,11 @@ class YamlChecker:
             print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
 
         if "SENTRY_DSN" in os.environ:
-            print("Worker init sentry")
             try:
                 with open("version") as fd:
                     version = fd.read().strip()
             except FileNotFoundError:
                 version = None
-
-            print(version)
-            print(os.environ["SENTRY_DSN"])
 
             sentry_sdk.init(
                 dsn=os.environ["SENTRY_DSN"],
@@ -173,10 +169,8 @@ class YamlChecker:
                 span.record_exception(e)
                 wpipe.send({"error": f"{e}"})
 
-        print("Flushing")
         traceProvider.force_flush()
         sentry_sdk.flush()
-        print("Done flushing")
 
     def run_check_for_job(self, job):
         rpipe, wpipe = Pipe()
