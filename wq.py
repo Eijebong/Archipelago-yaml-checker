@@ -1,17 +1,24 @@
+__import__("sys").path.append("/home/eijebong/code/ap0.5")
+
+import os
+import sentry_sdk
+
+if "SENTRY_DSN" in os.environ:
+    sentry_sdk.init(
+        dsn=os.environ["SENTRY_DSN"],
+        instrumenter="otel",
+        traces_sample_rate=1.0,
+        environment=os.environ.get("ENVIRONMENT", "dev")
+    )
+
 import aiohttp
 import asyncio
-import uuid
 import enum
-import os
-import sys
 import multiprocessing
+import sys
+import uuid
 
-from opentelemetry import trace
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
 import check
 
@@ -88,10 +95,11 @@ async def main(loop):
         print("Please provide a token in `YAML_VALIDATION_QUEUE_TOKEN`")
         sys.exit(1)
 
+    worker_name = str(uuid.uuid4())
     otlp_endpoint = os.environ.get("OTLP_ENDPOINT")
 
     checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, otlp_endpoint)
-    worker_name = str(uuid.uuid4())
+
     q = LobbyQueue(root_url, "yaml_validation", worker_name, token, loop)
 
     while True:
@@ -109,12 +117,13 @@ async def main(loop):
             continue
         except Exception as e:
             print(e)
-            # TODO: Light the beacon, gondor's calling for help
+            sentry_sdk.capture_exception(e)
+
             try:
                 await job.resolve(JobStatus.InternalError, {"error": str(e)})
             except Exception as e:
-                # TODO: Another reason for red alertg
                 print(e)
+                sentry_sdk.capture_exception(e)
                 continue
 
     await q.close()
@@ -130,4 +139,7 @@ async def do_a_check(checker, job):
 if __name__ == "__main__":
     multiprocessing.set_start_method('fork')
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(main(loop))
+    try:
+        loop.run_until_complete(main(loop))
+    except KeyboardInterrupt:
+        pass

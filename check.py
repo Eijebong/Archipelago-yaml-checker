@@ -1,8 +1,11 @@
 from opentelemetry import trace
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.propagate import set_global_textmap
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from sentry_sdk.integrations.opentelemetry import SentryPropagator, SentrySpanProcessor
+import sentry_sdk
 
 from Generate import roll_settings, PlandoOptions
 from Utils import parse_yamls
@@ -119,20 +122,36 @@ class YamlChecker:
         sys.argv.append("--player_files_path")
         sys.argv.append(yamldir)
 
-        for (apworld, version) in apworlds:
-            self.load_apworld(apworld, version)
-
+        try:
+            for (apworld, version) in apworlds:
+                self.load_apworld(apworld, version)
+        except Exception as e:
+            # This shouldn't happen ever. If an apworld fails to load, report it to sentry so it raises an alert on top of failing validation
+            sentry_sdk.record_exception(e)
+            raise e
 
         return self.check(data)
 
     def _inner_run_check_for_job(self, params, ctx, wpipe):
+        traceProvider = TracerProvider(resource=resource)
         if self.otlp_endpoint:
-            traceProvider = TracerProvider(resource=resource)
             processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=self.otlp_endpoint))
             traceProvider.add_span_processor(processor)
-            trace.set_tracer_provider(traceProvider)
         else:
             print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
+
+        if "SENTRY_DSN" in os.environ:
+            sentry_sdk.init(
+                dsn=os.environ["SENTRY_DSN"],
+                instrumenter="otel",
+                traces_sample_rate=1.0,
+            )
+            sentry_processor = SentrySpanProcessor()
+            traceProvider.add_span_processor(sentry_processor)
+            set_global_textmap(SentryPropagator())
+
+        trace.set_tracer_provider(traceProvider)
+
 
         with tracer.start_as_current_span("check_yamls", context=ctx) as span:
             try:
@@ -142,14 +161,13 @@ class YamlChecker:
                 span.record_exception(e)
                 wpipe.send({"error": f"{e}"})
 
-        if self.otlp_endpoint is not None:
-            processor.force_flush()
+        traceProvider.force_flush()
+        sentry_sdk.flush()
 
     def run_check_for_job(self, job):
         rpipe, wpipe = Pipe()
         p = Process(target=self._inner_run_check_for_job, args=(job.params, job.ctx, wpipe))
         p.start()
-        p.join()
 
         return rpipe.recv()
 
