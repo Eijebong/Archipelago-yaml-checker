@@ -1,14 +1,16 @@
-__import__("sys").path.append("/home/eijebong/code/ap0.5")
-
 import os
 import sentry_sdk
 
 if "SENTRY_DSN" in os.environ:
+    print("Enabling sentry")
     try:
         with open("version") as fd:
             version = fd.read().strip()
     except FileNotFoundError:
         version = None
+
+    print(version)
+    print(os.environ["SENTRY_DSN"])
 
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
