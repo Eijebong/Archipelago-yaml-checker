@@ -4,11 +4,18 @@ import os
 import sentry_sdk
 
 if "SENTRY_DSN" in os.environ:
+    try:
+        with open("version") as fd:
+            version = fd.read().strip()
+    except FileNotFoundError:
+        version = None
+
     sentry_sdk.init(
         dsn=os.environ["SENTRY_DSN"],
         instrumenter="otel",
         traces_sample_rate=1.0,
-        environment=os.environ.get("ENVIRONMENT", "dev")
+        environment=os.environ.get("ENVIRONMENT", "dev"),
+        release=version
     )
 
 import aiohttp
