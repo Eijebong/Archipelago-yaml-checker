@@ -127,7 +127,7 @@ class YamlChecker:
                 self.load_apworld(apworld, version)
         except Exception as e:
             # This shouldn't happen ever. If an apworld fails to load, report it to sentry so it raises an alert on top of failing validation
-            sentry_sdk.record_exception(e)
+            sentry_sdk.capture_exception(e)
             raise e
 
         return self.check(data)
