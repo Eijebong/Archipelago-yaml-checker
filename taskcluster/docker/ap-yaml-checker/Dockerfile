@@ -31,7 +31,7 @@ RUN mkdir archipelago && \
     pip install -r worlds/soe/requirements.txt && \
     pip install -r worlds/tloz/requirements.txt && \
     pip install -r worlds/zillion/requirements.txt && \
-    pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2" && \
+    pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2" dolphin-memory-engine==1.3.0 && \
     git rev-parse HEAD > /ap/archipelago/version && \
     mkdir -p /ap/supported_worlds && \
     chown -R worker:worker /ap/archipelago && \
