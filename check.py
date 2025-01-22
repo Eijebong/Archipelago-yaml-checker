@@ -15,6 +15,7 @@ from argparse import Namespace
 from Options import VerifyKeys, PerGameCommonOptions, StartInventoryPool
 from BaseClasses import CollectionState, MultiWorld, LocationProgressType
 from worlds import WorldSource
+import worlds
 
 import copy
 import os
@@ -77,6 +78,12 @@ class YamlChecker:
             raise Exception("Invalid apworld: {}, version {}".format(apworld_name, apworld_version))
 
         WorldSource(dest_path, is_zip=True, relative=False).load()
+        self.rebuild_netdata_package()
+
+    def rebuild_netdata_package(self):
+        for world_name, world in AutoWorldRegister.world_types.items():
+            if world_name not in worlds.network_data_package["games"]:
+                worlds.network_data_package["games"][world_name] =  world.get_data_package_data()
 
     def check(self, yaml_content):
         parsed_yamls = parse_yamls(yaml_content)
@@ -185,6 +192,8 @@ class DummyWorld(World):
     item_name_to_id = {}
     location_name_to_id = {}
     options_dataclass = PerGameCommonOptions
+    hidden = True
+
 
 @tracer.start_as_current_span("check_yaml")
 def check_yaml(game, name, yaml):

@@ -6,10 +6,14 @@ if len(sys.argv) != 7:
 
 import check
 import os
+import unittest
 from Options import get_option_groups
 from Utils import __version__, local_path
 from jinja2 import Template
-from worlds import AutoWorldRegister
+from worlds import AutoWorldRegister, network_data_package
+from test.bases import WorldTestBase
+import test.general.test_fill
+import test.general.test_ids
 
 import yaml
 
@@ -76,6 +80,7 @@ if __name__ == "__main__":
     checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, None)
 
     checker.load_apworld(apworld, version)
+    checker.rebuild_netdata_package()
 
     yaml_content = generate_template(apworld, world_name)
 
@@ -86,6 +91,19 @@ if __name__ == "__main__":
     if 'error' in result:
         print("Error while validating the apworld: {apworld} {version}")
         print(result["error"])
+        sys.exit(1)
+
+    class WorldTest(WorldTestBase):
+        game = world_name
+
+    runner = unittest.TextTestRunner(verbosity=2)
+
+    suite = unittest.TestSuite()
+    suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(WorldTest))
+    suite.addTests(unittest.defaultTestLoader.discover("test/general", top_level_dir="."))
+    results = runner.run(suite)
+
+    if not results.wasSuccessful():
         sys.exit(1)
 
     print(f"Successfully validated {apworld} {version}")
