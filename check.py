@@ -185,6 +185,8 @@ class DummyWorld(World):
     item_name_to_id = {}
     location_name_to_id = {}
     options_dataclass = PerGameCommonOptions
+    hidden = True
+
 
 @tracer.start_as_current_span("check_yaml")
 def check_yaml(game, name, yaml):
