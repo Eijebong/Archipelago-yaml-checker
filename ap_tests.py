@@ -22,6 +22,7 @@ if __name__ == "__main__":
     world_name = sys.argv[5]
     output_folder = sys.argv[6]
 
+    os.makedirs(output_folder, exist_ok=True)
     checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, None)
     checker.load_apworld(apworld, version)
 
