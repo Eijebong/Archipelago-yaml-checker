@@ -45,6 +45,7 @@ RUN bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 COPY /topsrcdir/wq.py /ap/archipelago/
 COPY /topsrcdir/check.py /ap/archipelago/
 COPY /topsrcdir/self_check.py /ap/archipelago/
+COPY /topsrcdir/ap_tests.py /ap/archipelago/
 COPY /topsrcdir/run.sh /ap/archipelago/
 
 CMD /ap/archipelago/run.sh
