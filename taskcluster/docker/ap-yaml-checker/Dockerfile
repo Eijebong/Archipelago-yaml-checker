@@ -7,6 +7,7 @@ RUN apt update && apt -y install python3 git python3-venv python3-tk zip && apt 
 # %include wq.py
 # %include check.py
 # %include self_check.py
+# %include ap_tests.py
 # %include run.sh
 
 WORKDIR /ap
