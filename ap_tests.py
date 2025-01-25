@@ -37,7 +37,13 @@ if __name__ == "__main__":
     results = runner.run(suite)
 
     if results.failures or results.errors:
-        output = {"failures": {fail.id(): tb for fail, tb in results.failures}, "errors": {error.id(): tb for error, tb in results.errors}, "apworld": apworld, "version": version, "world_name": world_name}
+        output = {
+            "failures": {fail.id(): {"traceback": tb, "description": fail.shortDescription() } for fail, tb in results.failures},
+            "errors": {error.id(): {"traceback": tb, "description": error.shortDescription()} for error, tb in results.errors},
+            "apworld": apworld,
+            "version": version,
+            "world_name": world_name
+        }
 
         with open(os.path.join(output_folder, f"{apworld}.aptest"), "w") as fd:
             fd.write(json.dumps(output))
