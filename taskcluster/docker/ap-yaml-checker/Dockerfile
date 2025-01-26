@@ -15,7 +15,7 @@ WORKDIR /ap
 RUN mkdir archipelago && \
     cd archipelago && \
     git init && \
-    git remote add origin https://github.com/ArchipelagoMW/Archipelago.git && \
+    git remote add origin https://github.com/Eijebong/Archipelago.git && \
     git fetch origin ${BASE_COMMIT} --depth 1 && \
     git reset --hard ${BASE_COMMIT} && \
     python3 -m venv .venv && \
