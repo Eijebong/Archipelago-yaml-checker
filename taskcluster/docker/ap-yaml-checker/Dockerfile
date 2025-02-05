@@ -36,6 +36,7 @@ RUN mkdir archipelago && \
     git rev-parse HEAD > /ap/archipelago/version && \
     mkdir -p /ap/supported_worlds && \
     chown -R worker:worker /ap/archipelago && \
+    echo "jakanddaxter_options:\n  enforce_friendly_options: false" > /ap/archipelago/host.yaml && \
     rm -Rf .git
 
 # %include prepare_worlds.sh
