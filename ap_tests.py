@@ -1,4 +1,5 @@
 import sys
+sys.path.append("/home/eijebong/code/ap0.5")
 
 if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")

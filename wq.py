@@ -1,5 +1,7 @@
 import os
 import sentry_sdk
+import sys
+sys.path.append("/home/eijebong/code/ap0.5")
 
 if "SENTRY_DSN" in os.environ:
     try:
