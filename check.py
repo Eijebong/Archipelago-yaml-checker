@@ -23,6 +23,7 @@ import requests
 import shutil
 import sys
 import tempfile
+import traceback
 from multiprocessing import Process, Pipe
 
 
@@ -341,10 +342,11 @@ def check_yaml(game, name, yaml):
         span = trace.get_current_span()
         span.record_exception(e)
 
-        if e.__cause__:
-            return False, f"Validation error for {name}: {e} - {e.__cause__}"
-        else:
-            return False, f"Validation error {name}: {e}"
+        error = traceback.format_exc(limit=0)
+        traceback.print_exc()
+
+
+        return False, f"Validation error for {name}:\n{error}"
 
     return True, "OK"
 
