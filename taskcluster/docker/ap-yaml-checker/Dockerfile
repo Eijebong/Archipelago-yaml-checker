@@ -2,7 +2,7 @@ FROM ghcr.io/eijebong/apwm:latest
 
 ARG BASE_COMMIT
 
-RUN apt update && apt -y install python3 git python3-venv python3-tk zip && apt clean
+RUN apt update && apt -y install python3 git python3-venv python3-tk zip && rm -Rf /var/lib/apt/lists/*
 
 # %include wq.py
 # %include check.py
