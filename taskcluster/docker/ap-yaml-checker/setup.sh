@@ -3,8 +3,9 @@
 set -ex
 
 BASE_COMMIT=$1
+FUZZER_COMMIT=$2
 
-apt update && apt -y install git zip
+apt update && apt -y install git zip curl
 
 mkdir -p /ap/archipelago
 cd /ap/archipelago
@@ -39,6 +40,7 @@ echo "jakanddaxter_options:\n  enforce_friendly_options: false" > /ap/archipelag
 bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 rm /ap/archipelago/prepare_worlds.sh
 
+curl https://raw.githubusercontent.com/Eijebong/Archipelago-fuzzer/${FUZZER_COMMIT}/fuzz.py -o /ap/archipelago/fuzz.py
 
 rm -Rf .git
 uv cache clean
