@@ -5,7 +5,7 @@ set -ex
 BASE_COMMIT=$1
 FUZZER_COMMIT=$2
 
-apt update && apt -y install git zip curl
+apt update && apt -y install git zip curl gcc python3-dev
 
 mkdir -p /ap/archipelago
 cd /ap/archipelago
@@ -20,6 +20,7 @@ pwd
 
 uv venv
 uv pip install -r requirements.txt
+uv run cythonize -a -i _speedups.pyx
 uv pip install -r WebHostLib/requirements.txt
 uv pip install -r worlds/_sc2common/requirements.txt
 uv pip install -r worlds/alttp/requirements.txt
@@ -42,6 +43,8 @@ rm /ap/archipelago/prepare_worlds.sh
 
 curl https://raw.githubusercontent.com/Eijebong/Archipelago-fuzzer/${FUZZER_COMMIT}/fuzz.py -o /ap/archipelago/fuzz.py
 
+apt purge -y gcc python3-dev
+apt autoremove -y
 rm -Rf .git
 uv cache clean
 rm -Rf /var/lib/apt/lists/*
