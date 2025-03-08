@@ -11,5 +11,5 @@ transforms:
 tasks:
     ap-yaml-checker:
       args:
-        BASE_COMMIT: fe8fc2e244ec98b5880c172589eb28bb62da96a3
+        BASE_COMMIT: 9dd9aeadbfd3de3373d755cb7ac847a6a5ac06d4
         FUZZER_COMMIT: d009c4d34cde9d20f46f163bece8abe005ef43b7
