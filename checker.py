@@ -12,15 +12,11 @@ from Utils import parse_yamls
 from worlds.AutoWorld import AutoWorldRegister, call_all, World
 from worlds.generic.Rules import exclusion_rules, locality_rules
 from argparse import Namespace
-from Options import VerifyKeys, PerGameCommonOptions, StartInventoryPool
+from Options import PerGameCommonOptions, StartInventoryPool
 from BaseClasses import CollectionState, MultiWorld, LocationProgressType
-from worlds import WorldSource
-import worlds
 
 import copy
 import os
-import requests
-import shutil
 import sys
 import tempfile
 import traceback
@@ -31,61 +27,12 @@ resource = Resource(attributes={
     SERVICE_NAME: "yaml-validation-worker"
 })
 
-
-# Some **supported** apworlds try to get stuff from external APIs. We do not want that as it currently times out in prod
-# Until I have a better solution, just return an error immediately when someone tries to use requests
-def no_internet(*args, **kwargs):
-    raise RuntimeError("The apworld tried to contact the internet which isn't supported with YAML validation.")
-
-requests.get = no_internet
-requests.post = no_internet
-requests.put = no_internet
-requests.head = no_internet
-requests.options = no_internet
-requests.delete = no_internet
-
-tracer = trace.get_tracer("yaml-validation-worker")
+tracer = trace.get_tracer("yaml-checker")
 
 class YamlChecker:
-    def __init__(self, apworlds_dir, custom_apworlds_dir, otlp_endpoint):
-        self.apworlds_dir = apworlds_dir
-        self.custom_apworlds_dir = custom_apworlds_dir
+    def __init__(self, ap_handler, otlp_endpoint):
+        self.ap_handler = ap_handler
         self.otlp_endpoint = otlp_endpoint
-        self.refresh_netdata_package()
-
-    @tracer.start_as_current_span("load_apworld")
-    def load_apworld(self, apworld_name, apworld_version):
-        span = trace.get_current_span()
-        span.set_attribute("apworld_name", apworld_name)
-        span.set_attribute("apworld_version", apworld_version)
-
-        if '/' in apworld_name:
-            raise Exception("Invalid apworld name")
-
-        if '/' in apworld_version:
-            raise Exception("Invalid apworld version")
-
-        tempdir = tempfile.mkdtemp()
-        apworld_path = f"{self.custom_apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
-        supported_apworld_path = f"{self.apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
-        dest_path = f"{tempdir}/{apworld_name}.apworld"
-
-        if os.path.isfile(apworld_path):
-            shutil.copy(apworld_path, dest_path)
-        elif os.path.isfile(supported_apworld_path):
-            shutil.copy(supported_apworld_path, dest_path)
-        else:
-            if "worlds." + apworld_name in sys.modules:
-                return
-            raise Exception("Invalid apworld: {}, version {}".format(apworld_name, apworld_version))
-
-        WorldSource(dest_path, is_zip=True, relative=False).load()
-        self.refresh_netdata_package()
-
-    def refresh_netdata_package(self):
-        for world_name, world in AutoWorldRegister.world_types.items():
-            if world_name not in worlds.network_data_package["games"]:
-                worlds.network_data_package["games"][world_name] =  world.get_data_package_data()
 
     def check(self, yaml_content):
         parsed_yamls = parse_yamls(yaml_content)
@@ -133,7 +80,7 @@ class YamlChecker:
 
         try:
             for (apworld, version) in apworlds:
-                self.load_apworld(apworld, version)
+                self.ap_handler.load_apworld(apworld, version)
         except Exception as e:
             # This shouldn't happen ever. If an apworld fails to load, report it to sentry so it raises an alert on top of failing validation
             sentry_sdk.capture_exception(e)
@@ -349,4 +296,5 @@ def check_yaml(game, name, yaml):
         return False, f"Validation error for {name}:\n{error}"
 
     return True, "OK"
+
 

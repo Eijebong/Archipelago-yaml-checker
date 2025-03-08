@@ -4,7 +4,8 @@ if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
     sys.exit(1)
 
-import check
+import handler
+import checker
 import os
 from Options import get_option_groups
 from Utils import __version__, local_path
@@ -73,15 +74,15 @@ if __name__ == "__main__":
     sys.argv.append("--player_files_path")
     sys.argv.append(output_folder)
 
-    checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, None)
+    ap_handler = handler.ApHandler(apworlds_dir, custom_apworlds_dir)
+    ap_checker = checker.YamlChecker(ap_handler, None)
 
-    checker.load_apworld(apworld, version)
-
+    ap_handler.load_apworld(apworld, version)
     yaml_content = generate_template(apworld, world_name)
 
     with open(os.path.join(output_folder, "template.yaml"), "w") as fd:
         fd.write(yaml_content)
-    result = checker.check(yaml_content)
+    result = ap_checker.check(yaml_content)
 
     if 'error' in result:
         print("Error while validating the apworld: {apworld} {version}")

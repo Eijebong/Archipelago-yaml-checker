@@ -1,18 +1,16 @@
 import sys
-sys.path.append("/home/eijebong/code/ap0.5")
 
 if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
     sys.exit(1)
 
-import check
+import handler
 import json
 import os
 import unittest
 from test.bases import WorldTestBase
 import test.general.test_fill
 import test.general.test_ids
-
 
 
 if __name__ == "__main__":
@@ -24,8 +22,8 @@ if __name__ == "__main__":
     output_folder = sys.argv[6]
 
     os.makedirs(output_folder, exist_ok=True)
-    checker = check.YamlChecker(apworlds_dir, custom_apworlds_dir, None)
-    checker.load_apworld(apworld, version)
+    ap_handler = handler.ApHandler(apworlds_dir, custom_apworlds_dir)
+    ap_handler.load_apworld(apworld, version)
 
     class WorldTest(WorldTestBase):
         game = world_name

@@ -2,4 +2,4 @@
 
 cd /ap/archipelago
 
-uv run python3 -O wq.py  /ap/supported_worlds /apworlds
+uv run python3 -O check_wq.py /ap/supported_worlds /apworlds

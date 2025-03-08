@@ -4,10 +4,14 @@ ARG BASE_COMMIT
 ARG FUZZER_COMMIT
 
 
+# %include checker.py
+# %include handler.py
 # %include wq.py
-# %include check.py
-# %include self_check.py
+
 # %include ap_tests.py
+# %include check_wq.py
+# %include self_check.py
+
 # %include run.sh
 # %include prepare_worlds.sh
 
