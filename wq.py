@@ -34,8 +34,15 @@ class LobbyQueue:
     def __init__(self, root_url, queue_name, worker_id, token, loop):
         self.queue_name = queue_name
         self.worker_id = worker_id
-        self.client = aiohttp.ClientSession(root_url, loop=loop)
+        self.client = aiohttp.ClientSession(root_url)
         self.token = token
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        loop = asyncio.new_event_loop()
+        loop.run_until_complete(self.close())
 
     async def claim_job(self):
         resp = await self.post("claim_job", json={"worker_id": self.worker_id})
@@ -76,6 +83,6 @@ class Job:
     async def resolve(self, status, result):
         await self._queue.post("resolve_job", json={"worker_id": self._queue.worker_id, "job_id": self.job_id, "status": status.value, "result": result})
 
-    async def reclaim_job(self):
+    async def reclaim(self):
         await self._queue.post("reclaim_job", json={"worker_id": self._queue.worker_id, "job_id": self.job_id})
 

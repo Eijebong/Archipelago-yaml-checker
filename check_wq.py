@@ -49,33 +49,30 @@ async def main(loop):
     ap_handler = handler.ApHandler(apworlds_dir, custom_apworlds_dir)
     ap_checker = checker.YamlChecker(ap_handler, otlp_endpoint)
 
-    q = LobbyQueue(root_url, "yaml_validation", worker_name, token, loop)
-
-    while True:
-        try:
-            job = await q.claim_job()
-        except Exception as e:
-            print(f"Error while claiming job from lobby: {e}. Retrying in 1s...")
-            await asyncio.sleep(1)
-            continue
-
-        try:
-            if job is not None:
-                print(f"Claimed job: {job.job_id}")
-                await do_a_check(ap_checker, job)
-            continue
-        except Exception as e:
-            print(e)
-            sentry_sdk.capture_exception(e)
+    async with LobbyQueue(root_url, "yaml_validation", worker_name, token, loop) as q:
+        while True:
+            try:
+                job = await q.claim_job()
+            except Exception as e:
+                print(f"Error while claiming job from lobby: {e}. Retrying in 1s...")
+                await asyncio.sleep(1)
+                continue
 
             try:
-                await job.resolve(JobStatus.InternalError, {"error": str(e)})
+                if job is not None:
+                    print(f"Claimed job: {job.job_id}")
+                    await do_a_check(ap_checker, job)
+                continue
             except Exception as e:
                 print(e)
                 sentry_sdk.capture_exception(e)
-                continue
 
-    await q.close()
+                try:
+                    await job.resolve(JobStatus.InternalError, {"error": str(e)})
+                except Exception as e:
+                    print(e)
+                    sentry_sdk.capture_exception(e)
+                    continue
 
 
 async def do_a_check(ap_checker, job):

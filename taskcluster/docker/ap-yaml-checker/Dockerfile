@@ -10,9 +10,11 @@ ARG FUZZER_COMMIT
 
 # %include ap_tests.py
 # %include check_wq.py
+# %include gen_wq.py
 # %include self_check.py
 
 # %include run.sh
+# %include run_gen.sh
 # %include prepare_worlds.sh
 
 COPY /topsrcdir/* /ap/archipelago/
