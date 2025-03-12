@@ -110,12 +110,12 @@ async def gather_resources(root_url, room_id, players_dir):
         z.extractall(players_dir)
 
 def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
-    out_buf = StringIO()
-    with redirect_stdout(out_buf), redirect_stderr(out_buf):
+    output_path = os.path.join(output_dir, job.job_id)
+    os.makedirs(output_path, exist_ok=True)
+    out_file = open(os.path.join(output_path, "output.log"), "w")
+    with redirect_stdout(out_file), redirect_stderr(out_file):
         # TODO: ctx should setup otlp + sentry
         loop = asyncio.new_event_loop()
-        output_path = os.path.join(output_dir, job.job_id)
-        os.makedirs(output_path, exist_ok=True)
 
         # Override Utils.user path so we can customize the logs folder
         def my_user_path(name):
@@ -167,9 +167,6 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
 
             wpipe.send({"error": error})
             return
-        finally:
-            with open(os.path.join(output_path, "output.log"), "w") as fd:
-                fd.write(out_buf.getvalue())
 
         result = {}
         wpipe.send(result)
