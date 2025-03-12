@@ -164,6 +164,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
         except Exception as e:
             error = traceback.format_exc()
             traceback.print_exc()
+            sentry_sdk.capture_exception(e)
 
             wpipe.send({"error": error})
             return
