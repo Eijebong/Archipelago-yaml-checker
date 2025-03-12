@@ -29,7 +29,7 @@ import zipfile
 import io
 import random
 from multiprocessing import Process, Pipe
-from Generate import main as GenMain
+from Generate import main as GenMain, PlandoOptions
 from Main import main as ERmain
 import Main
 from argparse import Namespace
@@ -148,7 +148,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
                 "meta_file_path": "meta-doesnt-exist.yaml", # TODO
                 "log_level": "info",
                 "yaml_output": 1,
-                "plando": 0b1111,
+                "plando": PlandoOptions("bosses, connections, texts, items"),
                 "skip_prog_balancing": False,
                 "skip_output": False,
                 "csv_output": False,
