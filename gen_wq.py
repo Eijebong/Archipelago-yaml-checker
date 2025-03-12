@@ -148,7 +148,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
                 "meta_file_path": "meta-doesnt-exist.yaml", # TODO
                 "log_level": "info",
                 "yaml_output": 1,
-                "plando": PlandoOptions("bosses, connections, texts, items"),
+                "plando": PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"})),
                 "skip_prog_balancing": False,
                 "skip_output": False,
                 "csv_output": False,
