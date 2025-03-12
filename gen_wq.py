@@ -28,6 +28,8 @@ import aiohttp
 import zipfile
 import io
 import random
+from io import StringIO
+from contextlib import redirect_stderr, redirect_stdout
 from multiprocessing import Process, Pipe
 from Generate import main as GenMain, PlandoOptions
 from Main import main as ERmain
@@ -108,64 +110,69 @@ async def gather_resources(root_url, room_id, players_dir):
         z.extractall(players_dir)
 
 def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
-    # TODO: ctx should setup otlp + sentry
-    loop = asyncio.new_event_loop()
-    output_path = os.path.join(output_dir, job.job_id)
-    os.makedirs(output_path, exist_ok=True)
+    out_buf = StringIO()
+    with redirect_stdout(out_buf), redirect_stderr(out_buf):
+        # TODO: ctx should setup otlp + sentry
+        loop = asyncio.new_event_loop()
+        output_path = os.path.join(output_dir, job.job_id)
+        os.makedirs(output_path, exist_ok=True)
 
-    # Override Utils.user path so we can customize the logs folder
-    def my_user_path(name):
-        if name == "logs":
-            return output_path
-        return ORIG_USER_PATH(name)
+        # Override Utils.user path so we can customize the logs folder
+        def my_user_path(name):
+            if name == "logs":
+                return output_path
+            return ORIG_USER_PATH(name)
 
 
-    Utils.user_path = my_user_path
+        Utils.user_path = my_user_path
 
-    try:
-        room_id = job.params["room_id"]
+        try:
+            room_id = job.params["room_id"]
 
-        players_dir = tempfile.mkdtemp(prefix="apgen")
-        loop.run_until_complete(gather_resources(root_url, room_id, players_dir))
-        # TODO: Get meta file
-        for apworld, version in job.params["apworlds"]:
-            ap_handler.load_apworld(apworld, version)
+            players_dir = tempfile.mkdtemp(prefix="apgen")
+            loop.run_until_complete(gather_resources(root_url, room_id, players_dir))
+            # TODO: Get meta file
+            for apworld, version in job.params["apworlds"]:
+                ap_handler.load_apworld(apworld, version)
 
-        from settings import get_settings
+            from settings import get_settings
 
-        settings = get_settings()
+            settings = get_settings()
 
-        args = Namespace(
-            **{
-                "weights_file_path": settings.generator.weights_file_path,
-                "sameoptions": False,
-                "player_files_path": players_dir,
-                "seed": random.randint(10000, 10000000),
-                "multi": 1,
-                "spoiler": 1,
-                "outputpath": output_path,
-                "race": False,
-                "meta_file_path": "meta-doesnt-exist.yaml", # TODO
-                "log_level": "info",
-                "yaml_output": 1,
-                "plando": PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"})),
-                "skip_prog_balancing": False,
-                "skip_output": False,
-                "csv_output": False,
-                "log_time": False,
-            }
-        )
-        erargs, seed = GenMain(args)
-        ERmain(erargs, seed)
-    except Exception as e:
-        error = traceback.format_exc()
-        traceback.print_exc()
+            args = Namespace(
+                **{
+                    "weights_file_path": settings.generator.weights_file_path,
+                    "sameoptions": False,
+                    "player_files_path": players_dir,
+                    "seed": random.randint(10000, 10000000),
+                    "multi": 1,
+                    "spoiler": 1,
+                    "outputpath": output_path,
+                    "race": False,
+                    "meta_file_path": "meta-doesnt-exist.yaml", # TODO
+                    "log_level": "info",
+                    "yaml_output": 1,
+                    "plando": PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"})),
+                    "skip_prog_balancing": False,
+                    "skip_output": False,
+                    "csv_output": False,
+                    "log_time": False,
+                }
+            )
+            erargs, seed = GenMain(args)
+            ERmain(erargs, seed)
+        except Exception as e:
+            error = traceback.format_exc()
+            traceback.print_exc()
 
-        wpipe.send({"error": error})
-        return
+            wpipe.send({"error": error})
+            return
+        finally:
+            with open(os.path.join(output_path, "output.log"), "w") as fd:
+                fd.write(out_buf.getvalue())
 
-    result = {}
-    wpipe.send(result)
+        result = {}
+        wpipe.send(result)
 
 async def run_gen_for_job(job, ap_handler, root_url, output_dir):
     rpipe, wpipe = Pipe()
