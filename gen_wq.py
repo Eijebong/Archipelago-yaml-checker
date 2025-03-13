@@ -112,8 +112,7 @@ async def gather_resources(root_url, room_id, players_dir):
 def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
     output_path = os.path.join(output_dir, job.job_id)
     os.makedirs(output_path, exist_ok=True)
-    out_file = open(os.path.join(output_path, "output.log"), "w")
-    with redirect_stdout(out_file), redirect_stderr(out_file):
+    with open(os.path.join(output_path, "output.log"), "w") as out_file, redirect_stderr(out_file), redirect_stdout(out_file):
         # TODO: ctx should setup otlp + sentry
         loop = asyncio.new_event_loop()
 
