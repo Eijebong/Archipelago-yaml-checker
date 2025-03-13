@@ -163,10 +163,10 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
         loop = asyncio.new_event_loop()
 
         # Override Utils.user path so we can customize the logs folder
-        def my_user_path(name):
+        def my_user_path(name, *args):
             if name == "logs":
                 return output_path
-            return ORIG_USER_PATH(name)
+            return ORIG_USER_PATH(name, *args)
 
 
         Utils.user_path = my_user_path
