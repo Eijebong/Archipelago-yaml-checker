@@ -30,6 +30,8 @@ import aiohttp
 import zipfile
 import io
 import random
+import yaml
+from worlds import AutoWorldRegister
 from io import StringIO
 from contextlib import redirect_stderr, redirect_stdout
 from multiprocessing import Process, Pipe
@@ -176,12 +178,22 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
 
             players_dir = tempfile.mkdtemp(prefix="apgen")
             loop.run_until_complete(gather_resources(root_url, room_id, players_dir))
-            # TODO: Get meta file
+
             for apworld, version in job.params["apworlds"]:
                 ap_handler.load_apworld(apworld, version)
 
-            from settings import get_settings
+            if job.params.get("meta_file"):
+                filtered_meta = {}
+                meta = yaml.safe_load(job.params["meta_file"])
 
+                for section, content in meta.items():
+                    if section == "meta_description" or section in AutoWorldRegister.world_types:
+                        filtered_meta[section] = content
+
+                with open(os.path.join(players_dir, "meta.yaml"), "w") as fd:
+                    fd.write(yaml.dump(filtered_meta))
+
+            from settings import get_settings
             settings = get_settings()
 
             args = Namespace(
@@ -194,7 +206,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
                     "spoiler": 1,
                     "outputpath": output_path,
                     "race": False,
-                    "meta_file_path": "meta-doesnt-exist.yaml", # TODO
+                    "meta_file_path": os.path.join(players_dir, "meta.yaml"),
                     "log_level": "info",
                     "yaml_output": 1,
                     "plando": PlandoOptions.from_set(frozenset({"bosses", "items", "connections", "texts"})),
