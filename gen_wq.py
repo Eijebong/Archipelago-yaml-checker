@@ -1,5 +1,7 @@
 import os
 import sentry_sdk
+import sys
+sys.path.insert(0, "/home/eijebong/code/ap0.5")
 
 if "SENTRY_DSN" in os.environ:
     try:
@@ -212,8 +214,9 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
             result = {"error": error}
 
         wpipe.send(result)
-        traceProvider.force_flush()
-        sentry_sdk.flush()
+
+    traceProvider.force_flush()
+    sentry_sdk.flush()
 
 async def run_gen_for_job(job, ap_handler, root_url, output_dir):
     rpipe, wpipe = Pipe()
