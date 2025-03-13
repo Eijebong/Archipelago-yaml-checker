@@ -30,6 +30,10 @@ class ApHandler:
         self.apworlds_dir = apworlds_dir
         self.custom_apworlds_dir = custom_apworlds_dir
         self.refresh_netdata_package()
+        self.tempdir = tempfile.mkdtemp()
+
+    def __del__(self):
+        shutil.rmtree(self.tempdir)
 
     @tracer.start_as_current_span("load_apworld")
     def load_apworld(self, apworld_name, apworld_version):
@@ -43,10 +47,9 @@ class ApHandler:
         if '/' in apworld_version:
             raise Exception("Invalid apworld version")
 
-        tempdir = tempfile.mkdtemp()
         apworld_path = f"{self.custom_apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
         supported_apworld_path = f"{self.apworlds_dir}/{apworld_name}-{apworld_version}.apworld"
-        dest_path = f"{tempdir}/{apworld_name}.apworld"
+        dest_path = f"{self.tempdir}/{apworld_name}.apworld"
 
         if os.path.isfile(apworld_path):
             shutil.copy(apworld_path, dest_path)
