@@ -157,6 +157,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
     output_path = os.path.join(output_dir, job.job_id)
     os.makedirs(output_path, exist_ok=True)
     with tracer.start_as_current_span("generate", context=ctx) as span, open(os.path.join(output_path, "output.log"), "w") as out_file, redirect_stderr(out_file), redirect_stdout(out_file):
+        result = {}
         loop = asyncio.new_event_loop()
 
         # Override Utils.user path so we can customize the logs folder
@@ -208,11 +209,11 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
             traceback.print_exc()
             sentry_sdk.capture_exception(e)
 
-            wpipe.send({"error": error})
-            return
+            result = {"error": error}
 
-        result = {}
         wpipe.send(result)
+        traceProvider.force_flush()
+        sentry_sdk.flush()
 
 async def run_gen_for_job(job, ap_handler, root_url, output_dir):
     rpipe, wpipe = Pipe()
