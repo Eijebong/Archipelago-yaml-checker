@@ -204,8 +204,18 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
                     "log_time": False,
                 }
             )
+
+            server_options = {
+                "hint_cost": 10,
+                "release_mode": "auto-enabled",
+                "remaining_mode": "goal",
+                "collect_mode": "disabled",
+                "item_cheat": False,
+                "server_password": None,
+            }
+
             erargs, seed = GenMain(args)
-            ERmain(erargs, seed)
+            ERmain(erargs, seed, baked_server_options=server_options)
         except Exception as e:
             error = traceback.format_exc()
             traceback.print_exc()
