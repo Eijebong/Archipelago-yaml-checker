@@ -1,7 +1,9 @@
 import os
 import sentry_sdk
 import sys
-sys.path.insert(0, "/home/eijebong/code/ap0.5")
+
+ap_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+sys.path.insert(0, ap_path)
 
 if "SENTRY_DSN" in os.environ:
     try:
