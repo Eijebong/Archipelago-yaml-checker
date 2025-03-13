@@ -37,7 +37,22 @@ import Main
 from argparse import Namespace
 import Utils
 
+from opentelemetry import trace
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.propagate import set_global_textmap
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from sentry_sdk.integrations.opentelemetry import SentryPropagator, SentrySpanProcessor
+import sentry_sdk
+
 ORIG_USER_PATH = Utils.user_path
+
+resource = Resource(attributes={
+    SERVICE_NAME: "generation-worker"
+})
+
+tracer = trace.get_tracer("generator")
 
 async def main(loop):
     try:
@@ -110,10 +125,38 @@ async def gather_resources(root_url, room_id, players_dir):
         z.extractall(players_dir)
 
 def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
+    traceProvider = TracerProvider(resource=resource)
+    otlp_endpoint = os.environ.get("OTLP_ENDPOINT")
+    if otlp_endpoint:
+        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=otlp_endpoint))
+        traceProvider.add_span_processor(processor)
+    else:
+        print("OTLP_ENDPOINT not provided, not enabling otlp exporter")
+
+    if "SENTRY_DSN" in os.environ:
+        try:
+            with open("version") as fd:
+                version = fd.read().strip()
+        except FileNotFoundError:
+            version = None
+
+        sentry_sdk.init(
+            dsn=os.environ["SENTRY_DSN"],
+            instrumenter="otel",
+            traces_sample_rate=1.0,
+            environment=os.environ.get("ENVIRONMENT", "dev"),
+            release=version
+        )
+        sentry_processor = SentrySpanProcessor()
+        traceProvider.add_span_processor(sentry_processor)
+        set_global_textmap(SentryPropagator())
+
+    trace.set_tracer_provider(traceProvider)
+
+
     output_path = os.path.join(output_dir, job.job_id)
     os.makedirs(output_path, exist_ok=True)
-    with open(os.path.join(output_path, "output.log"), "w") as out_file, redirect_stderr(out_file), redirect_stdout(out_file):
-        # TODO: ctx should setup otlp + sentry
+    with tracer.start_as_current_span("generate", context=ctx) as span, open(os.path.join(output_path, "output.log"), "w") as out_file, redirect_stderr(out_file), redirect_stdout(out_file):
         loop = asyncio.new_event_loop()
 
         # Override Utils.user path so we can customize the logs folder
