@@ -181,6 +181,9 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
             players_dir = tempfile.mkdtemp(prefix="apgen")
             loop.run_until_complete(gather_resources(root_url, room_id, players_dir))
 
+            sys.argv.append("--player_files_path")
+            sys.argv.append(players_dir)
+
             for apworld, version in job.params["apworlds"]:
                 ap_handler.load_apworld(apworld, version)
 
