@@ -33,6 +33,7 @@ import zipfile
 import io
 import random
 import yaml
+import shutil
 from worlds import AutoWorldRegister
 from io import StringIO
 from contextlib import redirect_stderr, redirect_stdout
@@ -239,6 +240,8 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
             sentry_sdk.capture_exception(e)
 
             result = {"error": error}
+        finally:
+            shutil.rmtree(players_dir)
 
         wpipe.send(result)
 
