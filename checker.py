@@ -35,7 +35,16 @@ class YamlChecker:
         self.otlp_endpoint = otlp_endpoint
 
     def check(self, yaml_content):
-        parsed_yamls = parse_yamls(yaml_content)
+        try:
+            parsed_yamls = list(parse_yamls(yaml_content))
+        except Exception as e:
+            span = trace.get_current_span()
+            span.record_exception(e)
+
+            error = traceback.format_exc(limit=0)
+            traceback.print_exc()
+            return {"error": error}
+
         result = False
         err = "No game verified, check your yaml"
 
