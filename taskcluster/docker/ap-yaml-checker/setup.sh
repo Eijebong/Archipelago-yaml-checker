@@ -5,7 +5,7 @@ set -ex
 BASE_COMMIT=$1
 FUZZER_COMMIT=$2
 
-apt update && apt -y install git zip curl gcc python3-dev python3-tkinter
+apt update && apt -y install git zip curl gcc python3-dev python3-tk
 
 mkdir -p /ap/archipelago
 cd /ap/archipelago
