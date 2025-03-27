@@ -193,7 +193,7 @@ def _inner_run_gen_for_job(job, ctx, ap_handler, root_url, output_dir, wpipe):
                 meta = yaml.safe_load(job.params["meta_file"])
 
                 for section, content in meta.items():
-                    if section == "meta_description" or section in AutoWorldRegister.world_types:
+                    if section == "meta_description" or section in AutoWorldRegister.world_types or section is None:
                         filtered_meta[section] = content
 
                 with open(os.path.join(players_dir, "meta.yaml"), "w") as fd:
