@@ -42,6 +42,7 @@ bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 rm /ap/archipelago/prepare_worlds.sh
 
 curl https://raw.githubusercontent.com/Eijebong/Archipelago-fuzzer/${FUZZER_COMMIT}/fuzz.py -o /ap/archipelago/fuzz.py
+chmod +x /ap/enemizer/EnemizerCLI.Core
 
 apt purge -y gcc python3-dev
 apt autoremove -y
