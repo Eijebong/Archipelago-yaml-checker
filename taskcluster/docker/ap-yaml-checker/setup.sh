@@ -36,7 +36,7 @@ uv pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk
 git rev-parse HEAD > /ap/archipelago/version
 mkdir -p /ap/supported_worlds
 chown -R worker:worker /ap/archipelago
-echo "jakanddaxter_options:\n  enforce_friendly_options: false" > /ap/archipelago/host.yaml
+echo -e "jakanddaxter_options:\n  enforce_friendly_options: false" > /ap/archipelago/host.yaml
 
 bash /ap/archipelago/prepare_worlds.sh /ap/archipelago /ap/supported_worlds
 rm /ap/archipelago/prepare_worlds.sh
