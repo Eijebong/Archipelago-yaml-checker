@@ -9,6 +9,7 @@ import sentry_sdk
 
 from Generate import roll_settings, PlandoOptions
 from Utils import parse_yamls
+from Options import get_option_groups, OptionDict, Choice
 from worlds.AutoWorld import AutoWorldRegister, call_all, World
 from worlds.generic.Rules import exclusion_rules, locality_rules
 from argparse import Namespace
@@ -153,6 +154,26 @@ class DummyWorld(World):
     hidden = True
 
 
+@tracer.start_as_current_span("check_settings")
+def check_settings(world, yaml):
+    option_groups = get_option_groups(world)
+    for group, options in option_groups.items():
+        for option_name, option_value in options.items():
+            if option_name in yaml:
+                value_in_yaml = yaml[option_name]
+                if not isinstance(value_in_yaml, dict) or issubclass(option_value, OptionDict) or issubclass(option_value, Choice):
+                    continue
+
+                for value, weight in value_in_yaml.items():
+                    if not weight:
+                        continue
+
+                    try:
+                        option_value.from_any(value)
+                    except Exception as e:
+                        raise ValueError("While validating the option `{}` in the game `{}`".format(option_name, world.game)) from e
+
+
 @tracer.start_as_current_span("check_yaml")
 def check_yaml(game, name, yaml):
     span = trace.get_current_span()
@@ -166,6 +187,7 @@ def check_yaml(game, name, yaml):
         multiworld.set_seed(0)
         multiworld.state = CollectionState(multiworld)
 
+        check_settings(world_type, yaml[world_type.game])
         span.add_event("Rolling settings")
         erargs = Namespace()
         settings = roll_settings(yaml, plando_options)
