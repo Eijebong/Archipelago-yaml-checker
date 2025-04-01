@@ -161,7 +161,7 @@ def check_settings(world, yaml):
         for option_name, option_value in options.items():
             if option_name in yaml:
                 value_in_yaml = yaml[option_name]
-                if not isinstance(value_in_yaml, dict) or issubclass(option_value, OptionDict) or issubclass(option_value, Choice):
+                if not isinstance(value_in_yaml, dict) or issubclass(option_value, OptionDict):
                     continue
 
                 for value, weight in value_in_yaml.items():
