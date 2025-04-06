@@ -5,8 +5,8 @@ RUN apk update && apk add unzip && unzip Enemizer.zip -d /Enemizer
 
 FROM ghcr.io/eijebong/apwm:latest
 
-ARG BASE_COMMIT
-ARG FUZZER_COMMIT
+ARG BASE_COMMIT=9dd9aeadbfd3de3373d755cb7ac847a6a5ac06d4
+ARG FUZZER_COMMIT=80fba9ba63669a5a0346fef5086b237f4a29fb2f
 
 
 # %include checker.py

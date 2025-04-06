@@ -21,6 +21,12 @@ if __name__ == "__main__":
     world_name = sys.argv[5]
     output_folder = sys.argv[6]
 
+    if 'NO_GET_OPTIONS' in os.environ:
+        import Utils
+        def no_get_options(*args, **kwargs):
+            raise RuntimeError("This apworld is using `get_options` with args {} {}".format(*args, **kwargs))
+        Utils.get_options = no_get_options
+
     os.makedirs(output_folder, exist_ok=True)
     ap_handler = handler.ApHandler(apworlds_dir, custom_apworlds_dir)
     ap_handler.load_apworld(apworld, version)
