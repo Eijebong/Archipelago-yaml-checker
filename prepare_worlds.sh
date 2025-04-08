@@ -6,6 +6,7 @@ if [ "$1" == ""  ] || [ "$2" == "" ]; then
 fi
 
 DEST=$2
+VERSION=$(cat $1/Utils.py | grep "__version__ =" | sed 's/__version__ = "\([0-9]\+.[0-9]\+.[0-9]\+\)"/\1/')
 
 for f in $1/worlds/*; do
     if [[ -f $f ]]; then
@@ -41,6 +42,6 @@ for f in $1/worlds/*; do
         continue
     fi
 
-    (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-0.5.1.apworld $(basename $f))
+    (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-${VERSION}.apworld $(basename $f))
     rm -Rf "$f"
 done
