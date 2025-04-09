@@ -20,7 +20,6 @@ pwd
 
 uv venv -p 3.12
 uv pip install -r requirements.txt
-uv pip install -r WebHostLib/requirements.txt
 uv pip install -r worlds/_sc2common/requirements.txt
 uv pip install -r worlds/alttp/requirements.txt
 uv pip install -r worlds/factorio/requirements.txt
