@@ -56,7 +56,7 @@ rm -Rf /tmp/fuzzer
 
 chmod +x /ap/enemizer/EnemizerCLI.Core
 
-apt purge -y gcc python3-dev
+apt purge -y clang python3-dev
 apt autoremove -y
 rm -Rf .git
 uv cache clean
