@@ -42,6 +42,11 @@ for f in $1/worlds/*; do
         continue
     fi
 
+    # Lufia2AC throws errors when loaded as a .apworld
+    if [[ "$(basename $f)" == "lufia2ac" ]]; then
+        continue
+    fi
+
     (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-${VERSION}.apworld $(basename $f))
     rm -Rf "$f"
 done
