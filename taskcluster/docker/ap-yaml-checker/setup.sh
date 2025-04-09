@@ -20,7 +20,6 @@ pwd
 
 uv venv -p 3.12
 uv pip install -r requirements.txt
-uv run cythonize -a -i _speedups.pyx
 uv pip install -r WebHostLib/requirements.txt
 uv pip install -r worlds/_sc2common/requirements.txt
 uv pip install -r worlds/alttp/requirements.txt
@@ -33,7 +32,8 @@ uv pip install -r worlds/tloz/requirements.txt
 uv pip install -r worlds/tww/requirements.txt
 uv pip install -r worlds/zillion/requirements.txt
 uv pip install -r worlds/zork_grand_inquisitor/requirements.txt
-uv pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2"
+uv pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2" setuptools
+uv run cythonize -a -i _speedups.pyx
 git rev-parse HEAD > /ap/archipelago/version
 mkdir -p /ap/supported_worlds
 chown -R worker:worker /ap/archipelago
