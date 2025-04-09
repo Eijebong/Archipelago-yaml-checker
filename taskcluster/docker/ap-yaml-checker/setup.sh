@@ -18,7 +18,7 @@ git reset --hard ${BASE_COMMIT}
 ls
 pwd
 
-uv venv
+uv venv -p 3.12
 uv pip install -r requirements.txt
 uv run cythonize -a -i _speedups.pyx
 uv pip install -r WebHostLib/requirements.txt
