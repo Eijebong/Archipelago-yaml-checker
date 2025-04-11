@@ -1,19 +1,21 @@
 import sys
+import os
 
 if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
     sys.exit(1)
 
-import warnings
-warnings.filterwarnings('ignore')
+ap_path = os.path.abspath(os.path.dirname(sys.argv[0]))
+sys.path.insert(0, ap_path)
 
 import handler
 import json
-import os
 import unittest
 from test.bases import WorldTestBase
 import test.general.test_fill
 import test.general.test_ids
+import warnings
+warnings.simplefilter("ignore")
 
 
 if __name__ == "__main__":
