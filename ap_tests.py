@@ -4,6 +4,9 @@ if len(sys.argv) != 7:
     print("Usage: self_check.py worlds_dir custom_worlds_dir apworld_name world_version world_name output_folder")
     sys.exit(1)
 
+import warnings
+warnings.filterwarnings('ignore')
+
 import handler
 import json
 import os
