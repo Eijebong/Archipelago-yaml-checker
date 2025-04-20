@@ -206,8 +206,7 @@ def check_yaml(game, name, yaml):
             getattr(erargs, option_name)[2] = option(option.default)
 
         # Skip generate_early for Zillion as it generates the level layout which is way too slow
-        # Skip it for jigsaw too as it has some options that make calculations horribly slow
-        if game in ["Zillion", "Jigsaw"]:
+        if game in ["Zillion"]:
             return True, "OK"
 
         multiworld.set_options(erargs)
