@@ -114,7 +114,7 @@ async def main(loop):
                 sentry_sdk.capture_exception(e)
 
                 try:
-                    await job.resolve(JobStatus.InternalError, {"error": str(e)})
+                    await job.resolve(JobStatus.InternalError, None)
                 except Exception as e:
                     print(e)
                     sentry_sdk.capture_exception(e)
@@ -279,7 +279,7 @@ async def do_a_gen(ap_handler, job, root_url, output_dir):
     result = await run_gen_for_job(job, ap_handler, root_url, output_dir)
 
     status = JobStatus.Failure if "error" in result else JobStatus.Success
-    await job.resolve(status, result)
+    await job.resolve(status, None)
     print(f"Resolved job {job.job_id} with status {status}")
 
 
