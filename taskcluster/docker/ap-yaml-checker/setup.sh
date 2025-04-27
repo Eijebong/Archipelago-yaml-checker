@@ -31,7 +31,7 @@ uv pip install -r worlds/tloz/requirements.txt
 uv pip install -r worlds/tww/requirements.txt
 uv pip install -r worlds/zillion/requirements.txt
 uv pip install -r worlds/zork_grand_inquisitor/requirements.txt
-uv pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2" setuptools
+uv pip install python-sat==1.8.dev13 opentelemetry-api==1.26.0 opentelemetry-sdk==1.26.0 opentelemetry-exporter-otlp-proto-grpc==1.26.0 aiohttp==3.9.5 "sentry-sdk[opentelemetry]==2.19.2" setuptools tomlkit semver
 uv run cythonize -a -i _speedups.pyx
 git rev-parse HEAD > /ap/archipelago/version
 mkdir -p /ap/supported_worlds
