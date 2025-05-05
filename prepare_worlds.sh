@@ -47,6 +47,11 @@ for f in $1/worlds/*; do
         continue
     fi
 
+    # SM throws errors when trying to get presets as a .apworld
+    if [[ "$(basename $f)" == "sm" ]]; then
+        continue
+    fi
+
     (cd $(dirname $f) && zip -r ${DEST}/$(basename $f)-${VERSION}.apworld $(basename $f))
     rm -Rf "$f"
 done
